@@ -6,6 +6,7 @@ use App\Models\Exam;
 use App\Http\Requests\StoreExamRequest;
 use App\Http\Requests\UpdateExamRequest;
 use Illuminate\Http\Request;
+use App\Http\Resources\ExamResource;
 
 class ExamController extends Controller
 {
@@ -15,10 +16,7 @@ class ExamController extends Controller
     public function index()
     {
         $exams = Exam::with('questions')->get();
-        return response()->json([
-            'status' => 'success',
-            'data' => $exams
-        ]);
+        return ExamResource::collection($exams);
     }
 
     /**
@@ -65,10 +63,7 @@ class ExamController extends Controller
      */
     public function show(Exam $exam)
     {
-        return response()->json([
-            'status' => 'success',
-            'data' => $exam->load('questions')
-        ]);
+        return new ExamResource($exam->load('questions'));
     }
 
     /**

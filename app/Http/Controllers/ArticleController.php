@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use App\Models\ArticleCategory;
+use App\Http\Resources\ArticleResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -43,10 +44,7 @@ class ArticleController extends Controller
 
         $articles = $query->paginate($request->input('per_page', 15));
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $articles
-        ]);
+        return ArticleResource::collection($articles);
     }
 
     /**
@@ -94,10 +92,7 @@ class ArticleController extends Controller
      */
     public function show(Article $article)
     {
-        return response()->json([
-            'status' => 'success',
-            'data' => $article->load(['author', 'categories', 'comments'])
-        ]);
+        return new ArticleResource($article->load(['author', 'categories', 'comments']));
     }
 
     /**

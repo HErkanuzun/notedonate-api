@@ -50,19 +50,19 @@ return new class extends Migration
                 'description' => 'Site logo yolu',
                 'is_public' => true
             ],
-            [
-                'key' => 'site.favicon',
-                'value' => '/images/favicon.ico',
-                'group' => 'general',
-                'type' => 'string',
-                'description' => 'Site favicon yolu',
-                'is_public' => true
-            ],
 
             // Tema Ayarları
             [
+                'key' => 'theme.mode',
+                'value' => 'light',
+                'group' => 'theme',
+                'type' => 'string',
+                'description' => 'Site tema modu (light/dark)',
+                'is_public' => true
+            ],
+            [
                 'key' => 'theme.primary_color',
-                'value' => '#4a90e2',
+                'value' => '#4F46E5',
                 'group' => 'theme',
                 'type' => 'string',
                 'description' => 'Ana tema rengi',
@@ -70,71 +70,45 @@ return new class extends Migration
             ],
             [
                 'key' => 'theme.secondary_color',
-                'value' => '#2c3e50',
+                'value' => '#6B7280',
                 'group' => 'theme',
                 'type' => 'string',
                 'description' => 'İkincil tema rengi',
                 'is_public' => true
             ],
             [
-                'key' => 'theme.dark_mode',
-                'value' => 'false',
-                'group' => 'theme',
-                'type' => 'boolean',
-                'description' => 'Karanlık mod aktif/pasif',
-                'is_public' => true
-            ],
-            [
                 'key' => 'theme.font_family',
-                'value' => 'Roboto, sans-serif',
+                'value' => 'Inter',
                 'group' => 'theme',
                 'type' => 'string',
                 'description' => 'Site yazı tipi',
                 'is_public' => true
             ],
 
-            // Dil Ayarları
+            // Kullanıcı Arayüzü Ayarları
             [
-                'key' => 'locale.default',
-                'value' => 'tr',
-                'group' => 'locale',
+                'key' => 'ui.sidebar_position',
+                'value' => 'left',
+                'group' => 'ui',
                 'type' => 'string',
-                'description' => 'Varsayılan dil',
+                'description' => 'Kenar çubuğu pozisyonu (left/right)',
                 'is_public' => true
             ],
             [
-                'key' => 'locale.available',
-                'value' => json_encode(['tr', 'en']),
-                'group' => 'locale',
-                'type' => 'json',
-                'description' => 'Kullanılabilir diller',
-                'is_public' => true
-            ],
-
-            // SEO Ayarları
-            [
-                'key' => 'seo.meta_description',
-                'value' => 'NoteAPP - Notlarınızı paylaşın, sınavlara hazırlanın',
-                'group' => 'seo',
-                'type' => 'string',
-                'description' => 'Meta açıklama',
+                'key' => 'ui.show_breadcrumbs',
+                'value' => 'true',
+                'group' => 'ui',
+                'type' => 'boolean',
+                'description' => 'Sayfa yol haritasını göster',
                 'is_public' => true
             ],
             [
-                'key' => 'seo.meta_keywords',
-                'value' => 'notlar, sınavlar, eğitim, öğrenim',
-                'group' => 'seo',
-                'type' => 'string',
-                'description' => 'Meta anahtar kelimeler',
+                'key' => 'ui.items_per_page',
+                'value' => '10',
+                'group' => 'ui',
+                'type' => 'integer',
+                'description' => 'Sayfa başına gösterilecek öğe sayısı',
                 'is_public' => true
-            ],
-            [
-                'key' => 'seo.google_analytics',
-                'value' => '',
-                'group' => 'seo',
-                'type' => 'string',
-                'description' => 'Google Analytics kodu',
-                'is_public' => false
             ],
 
             // Sosyal Medya Ayarları
@@ -143,7 +117,7 @@ return new class extends Migration
                 'value' => '',
                 'group' => 'social',
                 'type' => 'string',
-                'description' => 'Facebook sayfası URL',
+                'description' => 'Facebook sayfa linki',
                 'is_public' => true
             ],
             [
@@ -151,7 +125,7 @@ return new class extends Migration
                 'value' => '',
                 'group' => 'social',
                 'type' => 'string',
-                'description' => 'Twitter sayfası URL',
+                'description' => 'Twitter sayfa linki',
                 'is_public' => true
             ],
             [
@@ -159,60 +133,34 @@ return new class extends Migration
                 'value' => '',
                 'group' => 'social',
                 'type' => 'string',
-                'description' => 'Instagram sayfası URL',
+                'description' => 'Instagram sayfa linki',
                 'is_public' => true
             ],
 
-            // Mail Ayarları
+            // SEO Ayarları
             [
-                'key' => 'mail.from_address',
-                'value' => 'info@noteapp.com',
-                'group' => 'mail',
+                'key' => 'seo.meta_keywords',
+                'value' => 'notlar,sınavlar,eğitim,öğrenci',
+                'group' => 'seo',
                 'type' => 'string',
-                'description' => 'Gönderen mail adresi',
-                'is_public' => false
+                'description' => 'Meta anahtar kelimeler',
+                'is_public' => true
             ],
             [
-                'key' => 'mail.from_name',
-                'value' => 'NoteAPP',
-                'group' => 'mail',
+                'key' => 'seo.meta_description',
+                'value' => 'Not paylaşım ve sınav hazırlık platformu',
+                'group' => 'seo',
                 'type' => 'string',
-                'description' => 'Gönderen adı',
+                'description' => 'Meta açıklama',
+                'is_public' => true
+            ],
+            [
+                'key' => 'seo.google_analytics_id',
+                'value' => '',
+                'group' => 'seo',
+                'type' => 'string',
+                'description' => 'Google Analytics ID',
                 'is_public' => false
-            ],
-
-            // Sistem Ayarları
-            [
-                'key' => 'system.maintenance_mode',
-                'value' => 'false',
-                'group' => 'system',
-                'type' => 'boolean',
-                'description' => 'Bakım modu',
-                'is_public' => true
-            ],
-            [
-                'key' => 'system.items_per_page',
-                'value' => '15',
-                'group' => 'system',
-                'type' => 'integer',
-                'description' => 'Sayfa başına öğe sayısı',
-                'is_public' => true
-            ],
-            [
-                'key' => 'system.max_upload_size',
-                'value' => '5242880', // 5MB in bytes
-                'group' => 'system',
-                'type' => 'integer',
-                'description' => 'Maksimum dosya yükleme boyutu (byte)',
-                'is_public' => true
-            ],
-            [
-                'key' => 'system.allowed_file_types',
-                'value' => json_encode(['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx']),
-                'group' => 'system',
-                'type' => 'json',
-                'description' => 'İzin verilen dosya türleri',
-                'is_public' => true
             ]
         ];
 

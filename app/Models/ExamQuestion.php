@@ -11,6 +11,13 @@ class ExamQuestion extends Model
     /** @use HasFactory<\Database\Factories\ExamQuestionFactory> */
     use HasFactory;
 
+
+
+    protected $casts = [
+        'options' => 'array',
+        'marks' => 'integer'
+    ];
+
     protected $fillable = [
         'exam_id',
         'question',
@@ -18,11 +25,6 @@ class ExamQuestion extends Model
         'options',
         'correct_answer',
         'marks'
-    ];
-
-    protected $casts = [
-        'options' => 'array',
-        'marks' => 'integer'
     ];
 
     public function exam()

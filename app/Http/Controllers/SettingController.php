@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\SettingResource;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 
@@ -10,26 +11,10 @@ class SettingController extends Controller
     /**
      * Display a listing of the settings.
      */
-    public function index(Request $request)
+    public function index()
     {
-        $query = Setting::query();
-
-        // Grup filtresi
-        if ($request->has('group')) {
-            $query->where('group', $request->group);
-        }
-
-        // Sadece public ayarları göster
-        if ($request->boolean('public_only', false)) {
-            $query->where('is_public', true);
-        }
-
-        $settings = $query->get();
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $settings
-        ]);
+        $settings = Setting::all();
+        return SettingResource::collection($settings);
     }
 
     /**
@@ -65,10 +50,7 @@ class SettingController extends Controller
             abort(403);
         }
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $setting
-        ]);
+        return new SettingResource($setting);
     }
 
     /**
@@ -137,6 +119,153 @@ class SettingController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Settings updated successfully'
+        ]);
+    }
+
+    /**
+     * Get theme settings
+     */
+    public function getThemeSettings()
+    {
+        $themeSettings = Setting::where('group', 'theme')->get();
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $themeSettings
+        ]);
+    }
+
+    /**
+     * Update theme settings
+     */
+    public function updateThemeSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'theme.mode' => 'nullable|string|in:light,dark',
+            'theme.primary_color' => 'nullable|string',
+            'theme.secondary_color' => 'nullable|string',
+            'theme.font_family' => 'nullable|string'
+        ]);
+
+        foreach ($validated as $key => $value) {
+            if ($value !== null) {
+                Setting::where('key', $key)->update(['value' => $value]);
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Tema ayarları güncellendi'
+        ]);
+    }
+
+    /**
+     * Get UI settings
+     */
+    public function getUiSettings()
+    {
+        $uiSettings = Setting::where('group', 'ui')->get();
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $uiSettings
+        ]);
+    }
+
+    /**
+     * Update UI settings
+     */
+    public function updateUiSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'ui.sidebar_position' => 'nullable|string|in:left,right',
+            'ui.show_breadcrumbs' => 'nullable|boolean',
+            'ui.items_per_page' => 'nullable|integer|min:5|max:100'
+        ]);
+
+        foreach ($validated as $key => $value) {
+            if ($value !== null) {
+                Setting::where('key', $key)->update(['value' => $value]);
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Arayüz ayarları güncellendi'
+        ]);
+    }
+
+    /**
+     * Get social media settings
+     */
+    public function getSocialSettings()
+    {
+        $socialSettings = Setting::where('group', 'social')->get();
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $socialSettings
+        ]);
+    }
+
+    /**
+     * Update social media settings
+     */
+    public function updateSocialSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'social.facebook' => 'nullable|url',
+            'social.twitter' => 'nullable|url',
+            'social.instagram' => 'nullable|url'
+        ]);
+
+        foreach ($validated as $key => $value) {
+            if ($value !== null) {
+                Setting::where('key', $key)->update(['value' => $value]);
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Sosyal medya ayarları güncellendi'
+        ]);
+    }
+
+    /**
+     * Get SEO settings
+     */
+    public function getSeoSettings()
+    {
+        $seoSettings = Setting::where('group', 'seo')
+            ->where('is_public', true)
+            ->get();
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $seoSettings
+        ]);
+    }
+
+    /**
+     * Update SEO settings
+     */
+    public function updateSeoSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'seo.meta_keywords' => 'nullable|string',
+            'seo.meta_description' => 'nullable|string',
+            'seo.google_analytics_id' => 'nullable|string'
+        ]);
+
+        foreach ($validated as $key => $value) {
+            if ($value !== null) {
+                Setting::where('key', $key)->update(['value' => $value]);
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'SEO ayarları güncellendi'
         ]);
     }
 }

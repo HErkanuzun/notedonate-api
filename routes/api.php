@@ -12,6 +12,7 @@ use App\Http\Controllers\ExamQuestionController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\UniversityController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,7 +26,12 @@ use App\Http\Controllers\DepartmentController;
 */
 
 // Public routes that don't require authentication
-Route::prefix('v1')->group(function () {
+Route::post('/v1/register',[AuthController::class,'register']);
+Route::post('/v1/login',[AuthController::class,'login']);
+Route::middleware('auth:sanctum')->post('/v1/logout',[AuthController::class,'logout']);
+
+Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
+
     // Note routes
     Route::get('/note',[NoteController::class,'index']);
     Route::get('/note/show/{id}',[NoteController::class,'show']);
@@ -54,11 +60,11 @@ Route::prefix('v1')->group(function () {
     Route::post('/event/destroy/{id}',[EventController::class,'destroy']);
 
     // Exam Question routes
-    Route::get('/exam/questions',[ExamQuestionController::class,'index']);
-    Route::get('/exam/questions/show/{id}',[ExamQuestionController::class,'show']);
-    Route::post('/exam/questions/store',[ExamQuestionController::class,'store']);
-    Route::post('/exam/questions/update/{id}',[ExamQuestionController::class,'update']);
-    Route::post('/exam/questions/destroy/{id}',[ExamQuestionController::class,'destroy']);
+    Route::get('/exam-questions', [ExamQuestionController::class, 'index']);
+    Route::get('/exam-questions/{examQuestion}', [ExamQuestionController::class, 'show']);
+    Route::post('/exam-questions/store', [ExamQuestionController::class, 'store']);
+    Route::put('/exam-questions/{examQuestion}', [ExamQuestionController::class, 'update']);
+    Route::delete('/exam-questions/{examQuestion}', [ExamQuestionController::class, 'destroy']);
 
     // Article Routes
     Route::prefix('articles')->group(function () {
@@ -82,17 +88,44 @@ Route::prefix('v1')->group(function () {
     // Settings Routes
     Route::prefix('settings')->group(function () {
         Route::get('/', [SettingController::class, 'index']);
-        Route::post('/', [SettingController::class, 'store']);
-        Route::get('/{setting}', [SettingController::class, 'show']);
-        Route::put('/{setting}', [SettingController::class, 'update']);
-        Route::delete('/{setting}', [SettingController::class, 'destroy']);
-        Route::get('/group/{group}', [SettingController::class, 'getGroup']);
-        Route::post('/bulk-update', [SettingController::class, 'bulkUpdate']);
+        Route::post('/', [SettingController::class, 'update']);
+        
+        // Theme settings
+        Route::get('/theme', [SettingController::class, 'getThemeSettings']);
+        Route::post('/theme', [SettingController::class, 'updateThemeSettings']);
+        
+        // UI settings
+        Route::get('/ui', [SettingController::class, 'getUiSettings']);
+        Route::post('/ui', [SettingController::class, 'updateUiSettings']);
+        
+        // Social media settings
+        Route::get('/social', [SettingController::class, 'getSocialSettings']);
+        Route::post('/social', [SettingController::class, 'updateSocialSettings']);
+        
+        // SEO settings
+        Route::get('/seo', [SettingController::class, 'getSeoSettings']);
+        Route::post('/seo', [SettingController::class, 'updateSeoSettings']);
     });
 
     // Üniversite ve Bölüm rotaları
-    Route::apiResource('universities', UniversityController::class);
-    Route::apiResource('departments', DepartmentController::class);
+    Route::prefix('universities')->group(function () {
+        Route::get('/', [UniversityController::class, 'index']);
+        Route::post('/', [UniversityController::class, 'store']);
+        Route::get('/{university}', [UniversityController::class, 'show']);
+        Route::put('/{university}', [UniversityController::class, 'update']);
+        Route::delete('/{university}', [UniversityController::class, 'destroy']);
+        
+        // Üniversiteye ait bölümler
+        Route::get('/{university}/departments', [DepartmentController::class, 'getByUniversity']);
+    });
+
+    Route::prefix('departments')->group(function () {
+        Route::get('/', [DepartmentController::class, 'index']);
+        Route::post('/', [DepartmentController::class, 'store']);
+        Route::get('/{department}', [DepartmentController::class, 'show']);
+        Route::put('/{department}', [DepartmentController::class, 'update']);
+        Route::delete('/{department}', [DepartmentController::class, 'destroy']);
+    });
 
     // Filtreleme rotaları
     Route::get('notes/filter', [NoteController::class, 'filter']);

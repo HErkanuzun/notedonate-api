@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\CommentResource;
 use App\Models\Comment;
 use App\Models\Exam;
 use App\Models\Note;
@@ -53,6 +54,23 @@ class CommentController extends Controller
             'status' => 'success',
             'data' => $comments
         ]);
+    }
+
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $comments = Comment::with(['user', 'article'])->get();
+        return CommentResource::collection($comments);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Comment $comment)
+    {
+        return new CommentResource($comment->load(['user', 'article']));
     }
 
     /**

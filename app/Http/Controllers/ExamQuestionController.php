@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ExamQuestion;
 use App\Http\Requests\StoreExamQuestionRequest;
 use App\Http\Requests\UpdateExamQuestionRequest;
+use App\Http\Resources\ExamQuestionResource;
 use Illuminate\Http\Request;
 
 class ExamQuestionController extends Controller
@@ -16,10 +17,7 @@ class ExamQuestionController extends Controller
     {
         $questions = ExamQuestion::with(['exam'])->get();
         
-        return response()->json([
-            'status' => 'success',
-            'data' => $questions
-        ]);
+        return ExamQuestionResource::collection($questions);
     }
 
     /**
@@ -33,9 +31,21 @@ class ExamQuestionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreExamQuestionRequest $request)
+    public function store(Request $request)
     {
-        //
+        $question = new ExamQuestion();
+        $question->exam_id = $request->input('exam_id');
+        $question->question = $request->input('question');
+        $question->question_type = $request->input('question_type');
+        $question->options = $request->input('options');
+        $question->correct_answer = $request->input('correct_option');
+        $question->marks = $request->input('marks');
+        $question->save();
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Question created successfully',
+            'data' => $question
+        ], 201);
     }
 
     /**
@@ -64,7 +74,13 @@ class ExamQuestionController extends Controller
      */
     public function update(UpdateExamQuestionRequest $request, ExamQuestion $examQuestion)
     {
-        //
+        $examQuestion->update($request->validated());
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Question updated successfully',
+            'data' => $examQuestion
+        ]);
     }
 
     /**
@@ -72,6 +88,11 @@ class ExamQuestionController extends Controller
      */
     public function destroy(ExamQuestion $examQuestion)
     {
-        //
+        $examQuestion->delete();
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Question deleted successfully'
+        ]);
     }
 }

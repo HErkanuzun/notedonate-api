@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
         User::factory(5)->create();
 
         // Üniversiteler ve Bölümler
-        $universities = University::factory(5)->create();
+        $universities = University::factory(3)->create();
         
         foreach ($universities as $university) {
             Department::factory(3)->create([

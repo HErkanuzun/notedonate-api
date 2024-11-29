@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Http\Resources\EventResource;
 
 class EventController extends Controller
 {
@@ -37,10 +38,7 @@ class EventController extends Controller
 
         $events = $query->get();
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $events
-        ]);
+        return EventResource::collection($events);
     }
 
     /**
@@ -76,10 +74,7 @@ class EventController extends Controller
      */
     public function show(Event $event)
     {
-        return response()->json([
-            'status' => 'success',
-            'data' => $event->load(['creator', 'comments'])
-        ]);
+        return new EventResource($event->load(['creator', 'comments']));
     }
 
     /**

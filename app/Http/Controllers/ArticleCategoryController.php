@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ArticleCategoryResource;
 use App\Models\ArticleCategory;
 use Illuminate\Http\Request;
 
@@ -12,14 +13,8 @@ class ArticleCategoryController extends Controller
      */
     public function index()
     {
-        $categories = ArticleCategory::withCount('articles')
-            ->orderBy('name')
-            ->get();
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $categories
-        ]);
+        $categories = ArticleCategory::all();
+        return ArticleCategoryResource::collection($categories);
     }
 
     /**
@@ -44,14 +39,9 @@ class ArticleCategoryController extends Controller
     /**
      * Display the specified category.
      */
-    public function show(ArticleCategory $category)
+    public function show(ArticleCategory $articleCategory)
     {
-        return response()->json([
-            'status' => 'success',
-            'data' => $category->load(['articles' => function($query) {
-                $query->published()->orderBy('published_at', 'desc');
-            }])
-        ]);
+        return new ArticleCategoryResource($articleCategory);
     }
 
     /**
