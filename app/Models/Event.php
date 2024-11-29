@@ -19,12 +19,17 @@ class Event extends Model
         'location',
         'type',
         'status',
-        'created_by'
+        'created_by',
+        'university_id',
+        'department_id',
+        'year',
+        'semester'
     ];
 
     protected $casts = [
         'start_date' => 'datetime',
-        'end_date' => 'datetime'
+        'end_date' => 'datetime',
+        'year' => 'integer'
     ];
 
     /**
@@ -41,5 +46,21 @@ class Event extends Model
     public function comments()
     {
         return $this->morphMany(Comment::class, 'commentable');
+    }
+
+    /**
+     * Get the university that owns the event.
+     */
+    public function university()
+    {
+        return $this->belongsTo(University::class);
+    }
+
+    /**
+     * Get the department that owns the event.
+     */
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ExamQuestion;
 use App\Http\Requests\StoreExamQuestionRequest;
 use App\Http\Requests\UpdateExamQuestionRequest;
+use Illuminate\Http\Request;
 
 class ExamQuestionController extends Controller
 {
@@ -13,7 +14,12 @@ class ExamQuestionController extends Controller
      */
     public function index()
     {
-        //
+        $questions = ExamQuestion::with(['exam'])->get();
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $questions
+        ]);
     }
 
     /**
@@ -35,9 +41,14 @@ class ExamQuestionController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(ExamQuestion $examQuestion)
+    public function show($id)
     {
-        //
+        $question = ExamQuestion::with(['exam'])->findOrFail($id);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $question
+        ]);
     }
 
     /**

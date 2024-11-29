@@ -115,4 +115,54 @@ class NoteController extends Controller
         return response()->json(['message'=>'Note is deleted!'], 200);
 
     }
+
+    /**
+     * Filtrelenmiş notları getir
+     */
+    public function filter(Request $request)
+    {
+        $query = Note::query();
+
+        // Üniversite filtresi
+        if ($request->has('university_id')) {
+            $query->where('university_id', $request->university_id);
+        }
+
+        // Bölüm filtresi
+        if ($request->has('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+
+        // Yıl filtresi
+        if ($request->has('year')) {
+            $query->where('year', $request->year);
+        }
+
+        // Dönem filtresi
+        if ($request->has('semester')) {
+            $query->where('semester', $request->semester);
+        }
+
+        // Tarih filtresi
+        if ($request->has('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->has('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Sıralama
+        $sortField = $request->input('sort_by', 'created_at');
+        $sortDirection = $request->input('sort_direction', 'desc');
+        $query->orderBy($sortField, $sortDirection);
+
+        // Sayfalama
+        $perPage = $request->input('per_page', 15);
+        $notes = $query->paginate($perPage);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $notes
+        ]);
+    }
 }

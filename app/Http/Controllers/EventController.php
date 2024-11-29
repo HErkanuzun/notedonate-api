@@ -55,18 +55,19 @@ class EventController extends Controller
             'end_date' => 'required|date|after:start_date',
             'location' => 'nullable|string',
             'type' => 'required|string',
-            'status' => 'required|in:upcoming,ongoing,completed,cancelled'
+            'status' => 'required|in:upcoming,ongoing,completed,cancelled',
+            'created_by' => 'required|exists:users,id',
+            'university_id' => 'nullable|exists:universities,id',
+            'department_id' => 'nullable|exists:departments,id',
+            'year' => 'nullable|integer',
+            'semester' => 'nullable|in:fall,spring,summer'
         ]);
 
-        $event = Event::create([
-            ...$validated,
-            'created_by' => auth()->id()
-        ]);
+        $event = Event::create($validated);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Event created successfully',
-            'data' => $event->load(['creator', 'comments'])
+            'data' => $event->load('creator')
         ], 201);
     }
 

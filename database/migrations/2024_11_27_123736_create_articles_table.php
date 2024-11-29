@@ -21,6 +21,8 @@ return new class extends Migration
             $table->string('status')->default('draft'); // draft, published, archived
             $table->unsignedBigInteger('author_id');
             $table->timestamp('published_at')->nullable();
+            $table->unsignedInteger('view_count')->default(0);
+            $table->unsignedInteger('like_count')->default(0);
             $table->timestamps();
             $table->softDeletes();
 

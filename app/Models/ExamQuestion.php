@@ -16,11 +16,13 @@ class ExamQuestion extends Model
         'question',
         'question_type',
         'options',
-        'correct_option'
+        'correct_answer',
+        'marks'
     ];
 
     protected $casts = [
-        'options' => 'array'
+        'options' => 'array',
+        'marks' => 'integer'
     ];
 
     public function exam()

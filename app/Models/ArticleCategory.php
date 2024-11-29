@@ -33,7 +33,7 @@ class ArticleCategory extends Model
     private function createUniqueSlug($name)
     {
         $slug = Str::slug($name);
-        $count = static::whereRaw("slug RLIKE '^{$slug}(-[0-9]+)?$'")->count();
+        $count = static::whereRaw("slug REGEXP '^{$slug}(-[0-9]+)?$'")->count();
         
         return $count ? "{$slug}-{$count}" : $slug;
     }

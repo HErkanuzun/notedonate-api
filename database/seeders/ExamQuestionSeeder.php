@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\Exam;
 use App\Models\ExamQuestion;
 
 class ExamQuestionSeeder extends Seeder
@@ -14,30 +13,39 @@ class ExamQuestionSeeder extends Seeder
      */
     public function run(): void
     {
-        $exam = Exam::first(); // Varsayılan olarak bir sınav al
-    
         ExamQuestion::create([
-            'exam_id' => $exam->id,
+            'exam_id' => 1,
             'question' => 'What is the capital of France?',
-            'question_type' => 'multiple_choice', // Çoktan seçmeli soru
-            'options' => json_encode(['A' => 'Paris', 'B' => 'London', 'C' => 'Berlin', 'D' => 'Madrid']),
-            'correct_option' => 1, // Paris doğru cevap
+            'question_type' => 'multiple_choice',
+            'options' => [
+                'A' => 'Paris',
+                'B' => 'London',
+                'C' => 'Berlin',
+                'D' => 'Madrid'
+            ],
+            'correct_answer' => 'A',
+            'marks' => 10
         ]);
-    
+
         ExamQuestion::create([
-            'exam_id' => $exam->id,
-            'question' => 'Explain the theory of relativity.',
-            'question_type' => 'open_ended', // Açık uçlu soru
-            'options' => null,
-            'correct_option' => null, // Açık uçlu soru için doğru cevap yok
+            'exam_id' => 1,
+            'question' => 'Is PHP a programming language?',
+            'question_type' => 'true_false',
+            'options' => [
+                'A' => 'True',
+                'B' => 'False'
+            ],
+            'correct_answer' => 'A',
+            'marks' => 5
         ]);
-    
+
         ExamQuestion::create([
-            'exam_id' => $exam->id,
-            'question' => 'Is the earth flat?',
-            'question_type' => 'true_or_false', // Doğru/Yanlış sorusu
+            'exam_id' => 1,
+            'question' => 'Explain the MVC architecture.',
+            'question_type' => 'open_ended',
             'options' => null,
-            'correct_option' => 1, // Doğru seçenek: 1 (True)
+            'correct_answer' => 'Model-View-Controller is an architectural pattern that separates an application into three main logical components.',
+            'marks' => 15
         ]);
     }
 }
