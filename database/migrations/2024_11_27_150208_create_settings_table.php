@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
+            $table->string('key')->unique(); // Ayar anahtarı
+            $table->text('value'); // Ayar değeri
+            $table->string('group')->default('general'); // Ayar grubu (genel, email, görünüm vb.)
+            $table->string('type')->default('text'); // Değer tipi (text, boolean, json, vb.)
+            $table->text('description')->nullable(); // Ayar açıklaması
+            $table->boolean('is_public')->default(true); // Genel görünürlük
             $table->timestamps();
         });
     }
@@ -23,6 +29,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('settings');
-        
     }
 };
