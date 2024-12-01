@@ -3,176 +3,183 @@
 namespace App\Http\Controllers;
 
 use App\Models\Exam;
-use App\Http\Requests\StoreExamRequest;
-use App\Http\Requests\UpdateExamRequest;
 use Illuminate\Http\Request;
 use App\Http\Resources\ExamResource;
+use Carbon\Carbon;
 
 class ExamController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function __construct()
     {
-        $exams = Exam::with('questions')->get();
-        return ExamResource::collection($exams);
+        $this->middleware('auth:api');
+        $this->middleware('check.ownership')->only(['show', 'update', 'destroy']);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    public function index(Request $request)
+    {
+        try {
+            $query = Exam::query()
+                ->where('created_by', auth()->id())
+                ->with('creator');
+
+            // Filtreleme
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->has('subject')) {
+                $query->where('subject', $request->subject);
+            }
+
+            if ($request->has('exam_date')) {
+                $query->whereDate('exam_date', $request->exam_date);
+            }
+
+            // Sıralama
+            $query->orderBy('exam_date', 'asc');
+
+            $exams = $query->paginate($request->get('per_page', 10));
+
+            return response()->json([
+                'status' => 'success',
+                'data' => ExamResource::collection($exams),
+                'meta' => [
+                    'total' => $exams->total(),
+                    'current_page' => $exams->currentPage(),
+                    'last_page' => $exams->lastPage(),
+                    'per_page' => $exams->perPage()
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch exams',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'total_marks' => 'required|integer|min:0',
-            'duration' => 'required|integer|min:1',
-            'status' => 'required|in:active,completed,scheduled',
-            'created_by' => 'required|exists:users,id',
-            'questions' => 'required|array|min:1',
-            'questions.*.question' => 'required|string',
-            'questions.*.question_type' => 'required|string',
-            'questions.*.options' => 'nullable|array',
-            'questions.*.correct_option' => 'nullable|integer'
-        ]);
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'subject' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'exam_date' => 'required|date|after_or_equal:today',
+                'duration' => 'required|integer|min:1',
+                'total_marks' => 'required|integer|min:0',
+                'status' => 'required|in:upcoming,completed,cancelled'
+            ]);
 
-        $exam = Exam::create([
-            'name' => $validated['name'],
-            'description' => $validated['description'],
-            'total_marks' => $validated['total_marks'],
-            'duration' => $validated['duration'],
-            'status' => $validated['status'],
-            'created_by' => $validated['created_by']
-        ]);
+            $validated['created_by'] = auth()->id();
+            
+            $exam = Exam::create($validated);
 
-        foreach ($validated['questions'] as $questionData) {
-            $exam->questions()->create($questionData);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Exam created successfully',
+                'data' => new ExamResource($exam->load('creator'))
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to create exam',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Exam created successfully',
-            'data' => $exam->load('questions')
-        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Exam $exam)
     {
-        return new ExamResource($exam->load('questions'));
+        return new ExamResource($exam->load('creator'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Exam $exam)
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'total_marks' => 'sometimes|integer|min:0',
-            'duration' => 'sometimes|integer|min:1',
-            'status' => 'sometimes|in:active,completed,scheduled',
-            'questions' => 'sometimes|array|min:1',
-            'questions.*.id' => 'sometimes|exists:exam_questions,id',
-            'questions.*.question' => 'required|string',
-            'questions.*.question_type' => 'required|string',
-            'questions.*.options' => 'nullable|array',
-            'questions.*.correct_option' => 'nullable|integer'
-        ]);
+        try {
+            $validated = $request->validate([
+                'title' => 'sometimes|string|max:255',
+                'subject' => 'sometimes|string|max:255',
+                'description' => 'nullable|string',
+                'exam_date' => 'sometimes|date|after_or_equal:today',
+                'duration' => 'sometimes|integer|min:1',
+                'total_marks' => 'sometimes|integer|min:0',
+                'status' => 'sometimes|in:upcoming,completed,cancelled'
+            ]);
 
-        $exam->update($validated);
+            $exam->update($validated);
 
-        if (isset($validated['questions'])) {
-            // Delete existing questions not in the update
-            $questionIds = array_column($validated['questions'], 'id');
-            $exam->questions()->whereNotIn('id', $questionIds)->delete();
-
-            // Update or create questions
-            foreach ($validated['questions'] as $questionData) {
-                if (isset($questionData['id'])) {
-                    $exam->questions()->where('id', $questionData['id'])->update($questionData);
-                } else {
-                    $exam->questions()->create($questionData);
-                }
-            }
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Exam updated successfully',
+                'data' => new ExamResource($exam->fresh()->load('creator'))
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update exam',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Exam updated successfully',
-            'data' => $exam->load('questions')
-        ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Exam $exam)
     {
-        $exam->questions()->delete();
-        $exam->delete();
+        try {
+            $exam->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Exam deleted successfully'
-        ]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Exam deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to delete exam',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
-    /**
-     * Filtrelenmiş sınavları getir
-     */
-    public function filter(Request $request)
+    public function upcoming()
     {
-        $query = Exam::query();
+        try {
+            $exams = Exam::where('status', 'upcoming')
+                ->where('created_by', auth()->id())
+                ->where('exam_date', '>', Carbon::now())
+                ->orderBy('exam_date', 'asc')
+                ->with('creator')
+                ->paginate(10);
 
-        // Üniversite filtresi
-        if ($request->has('university_id')) {
-            $query->where('university_id', $request->university_id);
+            return response()->json([
+                'status' => 'success',
+                'data' => ExamResource::collection($exams),
+                'meta' => [
+                    'total' => $exams->total(),
+                    'current_page' => $exams->currentPage(),
+                    'last_page' => $exams->lastPage(),
+                    'per_page' => $exams->perPage()
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch upcoming exams',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        // Bölüm filtresi
-        if ($request->has('department_id')) {
-            $query->where('department_id', $request->department_id);
-        }
-
-        // Yıl filtresi
-        if ($request->has('year')) {
-            $query->where('year', $request->year);
-        }
-
-        // Dönem filtresi
-        if ($request->has('semester')) {
-            $query->where('semester', $request->semester);
-        }
-
-        // Tarih filtresi
-        if ($request->has('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        }
-        if ($request->has('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
-
-        // Sıralama
-        $sortField = $request->input('sort_by', 'created_at');
-        $sortDirection = $request->input('sort_direction', 'desc');
-        $query->orderBy($sortField, $sortDirection);
-
-        // İlişkili verileri yükle
-        $query->with(['questions', 'creator']);
-
-        // Sayfalama
-        $perPage = $request->input('per_page', 15);
-        $exams = $query->paginate($perPage);
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $exams
-        ]);
     }
 }

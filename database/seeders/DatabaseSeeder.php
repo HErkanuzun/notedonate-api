@@ -14,11 +14,16 @@ use App\Models\ExamQuestion;
 use App\Models\Event;
 use App\Models\Comment;
 use App\Models\Setting;
+use Database\Seeders\RoleSeeder;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call([
+            RoleSeeder::class,
+        ]);
+
         // Kullanıcılar
         User::factory(5)->create();
 

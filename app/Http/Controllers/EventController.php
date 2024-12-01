@@ -9,36 +9,62 @@ use App\Http\Resources\EventResource;
 
 class EventController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+        // Sadece show, update ve destroy işlemleri için ownership kontrolü
+        $this->middleware('check.ownership')->only(['show', 'update', 'destroy']);
+    }
+
     /**
      * Display a listing of events.
      */
     public function index(Request $request)
     {
-        $query = Event::query()->with(['creator', 'comments']);
+        try {
+            $query = Event::query()
+                ->where('created_by', auth()->id())
+                ->with('creator');
 
-        // Filtreleme
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+            // Filtreleme
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->has('type')) {
+                $query->where('type', $request->type);
+            }
+
+            if ($request->has('start_date')) {
+                $query->whereDate('start_date', '>=', $request->start_date);
+            }
+
+            if ($request->has('end_date')) {
+                $query->whereDate('end_date', '<=', $request->end_date);
+            }
+
+            // Sıralama
+            $query->orderBy('start_date', 'asc');
+
+            $events = $query->paginate($request->get('per_page', 10));
+
+            return response()->json([
+                'status' => 'success',
+                'data' => EventResource::collection($events),
+                'meta' => [
+                    'total' => $events->total(),
+                    'current_page' => $events->currentPage(),
+                    'last_page' => $events->lastPage(),
+                    'per_page' => $events->perPage()
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch events',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        if ($request->has('type')) {
-            $query->where('type', $request->type);
-        }
-
-        if ($request->has('start_date')) {
-            $query->whereDate('start_date', '>=', $request->start_date);
-        }
-
-        if ($request->has('end_date')) {
-            $query->whereDate('end_date', '<=', $request->end_date);
-        }
-
-        // Sıralama
-        $query->orderBy('start_date', 'asc');
-
-        $events = $query->get();
-
-        return EventResource::collection($events);
     }
 
     /**
@@ -46,27 +72,39 @@ class EventController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
-            'location' => 'nullable|string',
-            'type' => 'required|string',
-            'status' => 'required|in:upcoming,ongoing,completed,cancelled',
-            'created_by' => 'required|exists:users,id',
-            'university_id' => 'nullable|exists:universities,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'year' => 'nullable|integer',
-            'semester' => 'nullable|in:fall,spring,summer'
-        ]);
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'start_date' => 'required|date|after_or_equal:today',
+                'end_date' => 'required|date|after:start_date',
+                'location' => 'nullable|string|max:255',
+                'type' => 'required|string|in:general,meeting,deadline,exam,other',
+                'status' => 'required|in:upcoming,ongoing,completed,cancelled'
+            ]);
 
-        $event = Event::create($validated);
+            $validated['created_by'] = auth()->id();
+            
+            $event = Event::create($validated);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $event->load('creator')
-        ], 201);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Event created successfully',
+                'data' => new EventResource($event->load('creator'))
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to create event',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -74,7 +112,7 @@ class EventController extends Controller
      */
     public function show(Event $event)
     {
-        return new EventResource($event->load(['creator', 'comments']));
+        return new EventResource($event->load('creator'));
     }
 
     /**
@@ -82,23 +120,37 @@ class EventController extends Controller
      */
     public function update(Request $request, Event $event)
     {
-        $validated = $request->validate([
-            'title' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'start_date' => 'sometimes|date',
-            'end_date' => 'sometimes|date|after:start_date',
-            'location' => 'nullable|string',
-            'type' => 'sometimes|string',
-            'status' => 'sometimes|in:upcoming,ongoing,completed,cancelled'
-        ]);
+        try {
+            $validated = $request->validate([
+                'title' => 'sometimes|string|max:255',
+                'description' => 'nullable|string',
+                'start_date' => 'sometimes|date|after_or_equal:today',
+                'end_date' => 'sometimes|date|after:start_date',
+                'location' => 'nullable|string|max:255',
+                'type' => 'sometimes|string|in:general,meeting,deadline,exam,other',
+                'status' => 'sometimes|in:upcoming,ongoing,completed,cancelled'
+            ]);
 
-        $event->update($validated);
+            $event->update($validated);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Event updated successfully',
-            'data' => $event->load(['creator', 'comments'])
-        ]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Event updated successfully',
+                'data' => new EventResource($event->fresh()->load('creator'))
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update event',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -106,12 +158,20 @@ class EventController extends Controller
      */
     public function destroy(Event $event)
     {
-        $event->delete();
+        try {
+            $event->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Event deleted successfully'
-        ]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Event deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to delete event',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -119,15 +179,30 @@ class EventController extends Controller
      */
     public function upcoming()
     {
-        $events = Event::where('status', 'upcoming')
-            ->where('start_date', '>', Carbon::now())
-            ->orderBy('start_date', 'asc')
-            ->with(['creator', 'comments'])
-            ->get();
+        try {
+            $events = Event::where('status', 'upcoming')
+                ->where('created_by', auth()->id())
+                ->where('start_date', '>', Carbon::now())
+                ->orderBy('start_date', 'asc')
+                ->with('creator')
+                ->paginate(10);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $events
-        ]);
+            return response()->json([
+                'status' => 'success',
+                'data' => EventResource::collection($events),
+                'meta' => [
+                    'total' => $events->total(),
+                    'current_page' => $events->currentPage(),
+                    'last_page' => $events->lastPage(),
+                    'per_page' => $events->perPage()
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch upcoming events',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

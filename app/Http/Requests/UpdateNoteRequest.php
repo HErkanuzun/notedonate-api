@@ -22,7 +22,13 @@ class UpdateNoteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'title' => 'sometimes|required|string|max:255',
+            'content' => 'sometimes|required|string',
+            'storage_link' => 'nullable|string',
+            'university_id' => 'nullable|exists:universities,id',
+            'department_id' => 'nullable|exists:departments,id',
+            'year' => 'nullable|integer|min:1900|max:' . (date('Y') + 1),
+            'semester' => 'nullable|in:fall,spring,summer'
         ];
     }
 }

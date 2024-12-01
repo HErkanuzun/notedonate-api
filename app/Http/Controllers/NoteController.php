@@ -7,41 +7,39 @@ use App\Http\Requests\StoreNoteRequest;
 use App\Http\Requests\UpdateNoteRequest;
 use App\Http\Resources\NoteResource;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class NoteController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum');
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        
-    $cachednote = cache()->remember('notecache',now()->addMinutes(50),function(){
-        return Note::paginate(25);
-    });
-    return NoteResource::collection($cachednote);
-
+        $notes = Note::where('user_id', Auth::id())->paginate(25);
+        return NoteResource::collection($notes);
     }
-
 
     /**
      * Store a newly created resource in storage.
      */
     public function store(StoreNoteRequest $request)
     {
-     
-            $storenote = new Note();
-            $storenote->title = $request->title;
-            $storenote->content = $request->content;
-            $storenote->storage_link = $request->storage_link;
-            $storenote->viewer = $request->viewer;
-            $storenote->like = $request->like;
-            $storenote->save();
-            return response()->json(
-                [
-                    'message'=> "created"
-                ],201 
-            );
+        $note = Note::create([
+            'user_id' => Auth::id(),
+            'title' => $request->title,
+            'content' => $request->content,
+            'storage_link' => $request->storage_link,
+            'viewer' => 0,
+            'like' => 0
+        ]);
+
+        return new NoteResource($note);
     }
 
     /**
@@ -49,55 +47,24 @@ class NoteController extends Controller
      */
     public function show($id)
     {
-
-        if(isset(($id)))
-        $cachenote = cache()->remember("note$id",now()->addMinutes(50),function() use ($id) {
-            return Note::find($id);
-        });
-
-        return new NoteResource($cachenote);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Note $note)
-    {
-        //
+        $note = Note::where('user_id', Auth::id())->findOrFail($id);
+        
+        // Increment viewer count
+        $note->increment('viewer');
+        
+        return new NoteResource($note);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateNoteRequest $request)
+    public function update(UpdateNoteRequest $request, $id)
     {
-             
-        $storenote = note::find($request->id);
-        if (isset($request->title)) {
-            $storenote->title = $request->title;
-        }
+        $note = Note::where('user_id', Auth::id())->findOrFail($id);
         
-        if (isset($request->content)) {
-            $storenote->content = $request->content;
-        }
+        $note->update($request->validated());
         
-        if (isset($request->storage_link)) {
-            $storenote->storage_link = $request->storage_link;
-        }
-        
-        if (isset($request->viewer)) {
-            $storenote->viewer = $request->viewer;
-        }
-        
-        if (isset($request->like)) {
-            $storenote->like = $request->like;
-        }
-        $storenote->save();
-        return response()->json(
-            [
-                'message'=> "created"
-            ],201 
-        );
+        return new NoteResource($note);
     }
 
     /**
@@ -105,15 +72,21 @@ class NoteController extends Controller
      */
     public function destroy($id)
     {
-        $note = Note::find($id);
-
-        if(!$note){
-            return response()->json(['message' => 'Note is not found!'], 404);
-        }
+        $note = Note::where('user_id', Auth::id())->findOrFail($id);
         $note->delete();
+        
+        return response()->json(['message' => 'Note deleted successfully']);
+    }
 
-        return response()->json(['message'=>'Note is deleted!'], 200);
-
+    /**
+     * Like a note
+     */
+    public function like($id)
+    {
+        $note = Note::findOrFail($id);
+        $note->increment('like');
+        
+        return new NoteResource($note);
     }
 
     /**

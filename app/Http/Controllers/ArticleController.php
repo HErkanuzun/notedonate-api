@@ -3,181 +3,190 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
-use App\Models\ArticleCategory;
-use App\Http\Resources\ArticleResource;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use App\Http\Resources\ArticleResource;
 
 class ArticleController extends Controller
 {
-    /**
-     * Display a listing of articles.
-     */
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+        $this->middleware('check.ownership')->only(['show', 'update', 'destroy']);
+    }
+
     public function index(Request $request)
     {
-        $query = Article::with(['author', 'categories', 'comments']);
+        try {
+            $query = Article::query()
+                ->where('created_by', auth()->id())
+                ->with('creator');
 
-        // Filtreleme
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+            // Filtreleme
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->has('category')) {
+                $query->where('category', $request->category);
+            }
+
+            if ($request->has('tag')) {
+                $query->whereJsonContains('tags', $request->tag);
+            }
+
+            // Sıralama
+            $sortBy = $request->get('sort_by', 'created_at');
+            $sortOrder = $request->get('sort_order', 'desc');
+            $query->orderBy($sortBy, $sortOrder);
+
+            $articles = $query->paginate($request->get('per_page', 10));
+
+            return response()->json([
+                'status' => 'success',
+                'data' => ArticleResource::collection($articles),
+                'meta' => [
+                    'total' => $articles->total(),
+                    'current_page' => $articles->currentPage(),
+                    'last_page' => $articles->lastPage(),
+                    'per_page' => $articles->perPage()
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch articles',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        if ($request->has('category')) {
-            $query->whereHas('categories', function ($q) use ($request) {
-                $q->where('slug', $request->category);
-            });
-        }
-
-        if ($request->has('author')) {
-            $query->whereHas('author', function ($q) use ($request) {
-                $q->where('id', $request->author);
-            });
-        }
-
-        // Yayınlanmış makaleleri getir
-        if ($request->boolean('published_only', false)) {
-            $query->published();
-        }
-
-        // Sıralama
-        $query->orderBy('created_at', 'desc');
-
-        $articles = $query->paginate($request->input('per_page', 15));
-
-        return ArticleResource::collection($articles);
     }
 
-    /**
-     * Store a newly created article.
-     */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'featured_image' => 'nullable|image|max:2048', // 2MB max
-            'excerpt' => 'nullable|string',
-            'status' => 'required|in:draft,published,archived',
-            'categories' => 'array',
-            'categories.*' => 'exists:article_categories,id',
-            'published_at' => 'nullable|date'
-        ]);
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'content' => 'required|string',
+                'category' => 'required|string|max:50',
+                'tags' => 'nullable|array',
+                'tags.*' => 'string|max:30',
+                'status' => 'required|in:draft,published,archived',
+                'publish_date' => 'nullable|date|after_or_equal:today'
+            ]);
 
-        // Resim yükleme
-        if ($request->hasFile('featured_image')) {
-            $path = $request->file('featured_image')->store('articles', 'public');
-            $validated['featured_image'] = $path;
+            $validated['created_by'] = auth()->id();
+            
+            $article = Article::create($validated);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Article created successfully',
+                'data' => new ArticleResource($article->load('creator'))
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to create article',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $article = Article::create([
-            ...$validated,
-            'author_id' => auth()->id(),
-            'published_at' => $validated['status'] === 'published' ? now() : null
-        ]);
-
-        // Kategorileri ekle
-        if (isset($validated['categories'])) {
-            $article->categories()->sync($validated['categories']);
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Article created successfully',
-            'data' => $article->load(['author', 'categories', 'comments'])
-        ], 201);
     }
 
-    /**
-     * Display the specified article.
-     */
     public function show(Article $article)
     {
-        return new ArticleResource($article->load(['author', 'categories', 'comments']));
+        return new ArticleResource($article->load('creator'));
     }
 
-    /**
-     * Update the specified article.
-     */
     public function update(Request $request, Article $article)
     {
-        $validated = $request->validate([
-            'title' => 'sometimes|string|max:255',
-            'content' => 'sometimes|string',
-            'featured_image' => 'nullable|image|max:2048',
-            'excerpt' => 'nullable|string',
-            'status' => 'sometimes|in:draft,published,archived',
-            'categories' => 'array',
-            'categories.*' => 'exists:article_categories,id',
-            'published_at' => 'nullable|date'
-        ]);
+        try {
+            $validated = $request->validate([
+                'title' => 'sometimes|string|max:255',
+                'content' => 'sometimes|string',
+                'category' => 'sometimes|string|max:50',
+                'tags' => 'nullable|array',
+                'tags.*' => 'string|max:30',
+                'status' => 'sometimes|in:draft,published,archived',
+                'publish_date' => 'nullable|date|after_or_equal:today'
+            ]);
 
-        // Yeni resim yükleme
-        if ($request->hasFile('featured_image')) {
-            // Eski resmi sil
-            if ($article->featured_image) {
-                Storage::disk('public')->delete($article->featured_image);
-            }
-            
-            $path = $request->file('featured_image')->store('articles', 'public');
-            $validated['featured_image'] = $path;
+            $article->update($validated);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Article updated successfully',
+                'data' => new ArticleResource($article->fresh()->load('creator'))
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update article',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        // Eğer makale yayınlanıyorsa published_at'i güncelle
-        if (isset($validated['status']) && $validated['status'] === 'published' && $article->status !== 'published') {
-            $validated['published_at'] = now();
-        }
-
-        $article->update($validated);
-
-        // Kategorileri güncelle
-        if (isset($validated['categories'])) {
-            $article->categories()->sync($validated['categories']);
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Article updated successfully',
-            'data' => $article->load(['author', 'categories', 'comments'])
-        ]);
     }
 
-    /**
-     * Remove the specified article.
-     */
     public function destroy(Article $article)
     {
-        // Resmi sil
-        if ($article->featured_image) {
-            Storage::disk('public')->delete($article->featured_image);
+        try {
+            $article->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Article deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to delete article',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $article->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Article deleted successfully'
-        ]);
     }
 
-    /**
-     * Get articles by category.
-     */
-    public function byCategory($categorySlug)
+    public function search(Request $request)
     {
-        $category = ArticleCategory::where('slug', $categorySlug)->firstOrFail();
-        
-        $articles = $category->articles()
-            ->with(['author', 'categories'])
-            ->published()
-            ->orderBy('published_at', 'desc')
-            ->paginate(15);
+        try {
+            $query = Article::query()
+                ->where('created_by', auth()->id())
+                ->where(function($q) use ($request) {
+                    $searchTerm = $request->get('q');
+                    $q->where('title', 'like', "%{$searchTerm}%")
+                      ->orWhere('content', 'like', "%{$searchTerm}%")
+                      ->orWhere('category', 'like', "%{$searchTerm}%")
+                      ->orWhereJsonContains('tags', $searchTerm);
+                })
+                ->with('creator');
 
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'category' => $category,
-                'articles' => $articles
-            ]
-        ]);
+            $articles = $query->paginate($request->get('per_page', 10));
+
+            return response()->json([
+                'status' => 'success',
+                'data' => ArticleResource::collection($articles),
+                'meta' => [
+                    'total' => $articles->total(),
+                    'current_page' => $articles->currentPage(),
+                    'last_page' => $articles->lastPage(),
+                    'per_page' => $articles->perPage()
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to search articles',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -4,27 +4,32 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Comment;
 use App\Models\User;
+use App\Models\University;
+use App\Models\Department;
 
 class Note extends Model
 {
-    /** @use HasFactory<\Database\Factories\NoteFactory> */
     use HasFactory;
 
     protected $fillable = [
         'title',
         'content',
-        'user_id'
+        'storage_link',
+        'viewer',
+        'like',
+        'user_id',
+        'university_id',
+        'department_id',
+        'year',
+        'semester'
     ];
 
-    /**
-     * Get all comments for the note.
-     */
-    public function comments()
-    {
-        return $this->morphMany(Comment::class, 'commentable');
-    }
+    protected $casts = [
+        'viewer' => 'integer',
+        'like' => 'integer',
+        'year' => 'integer'
+    ];
 
     /**
      * Get the user that owns the note.
@@ -32,5 +37,15 @@ class Note extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function university()
+    {
+        return $this->belongsTo(University::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
     }
 }

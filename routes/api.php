@@ -13,6 +13,8 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\UniversityController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\PhoneVerificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,18 +28,36 @@ use App\Http\Controllers\AuthController;
 */
 
 // Public routes that don't require authentication
-Route::post('/v1/register',[AuthController::class,'register']);
-Route::post('/v1/login',[AuthController::class,'login']);
-Route::middleware('auth:sanctum')->post('/v1/logout',[AuthController::class,'logout']);
+Route::post('/register',[AuthController::class,'register']);
+Route::post('/login',[AuthController::class,'login']);
 
-Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
+Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+    ->name('verification.verify');
+
+Route::post('/email/verification-notification', [AuthController::class, 'resendVerificationEmail'])
+    ->middleware(['throttle:6,1'])
+    ->name('verification.send');
+
+// Şifre sıfırlama route'ları
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])
+    ->middleware(['throttle:6,1'])
+    ->name('password.email');
+
+Route::get('/reset-password', [AuthController::class, 'showResetForm'])
+    ->name('password.reset');
+
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])
+    ->name('password.update');
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout',[AuthController::class,'logout']);
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
 
     // Note routes
-    Route::get('/note',[NoteController::class,'index']);
-    Route::get('/note/show/{id}',[NoteController::class,'show']);
-    Route::post('/note/store',[NoteController::class,'store']);
-    Route::post('/note/update/{id}',[NoteController::class,'update']);
-    Route::post('/note/destroy/{id}',[NoteController::class,'destroy']);
+    Route::apiResource('notes', NoteController::class);
+    Route::post('notes/{id}/like', [NoteController::class, 'like']);
 
     // Exam routes
     Route::get('/exam',[ExamController::class,'index']);
@@ -127,14 +147,40 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::delete('/{department}', [DepartmentController::class, 'destroy']);
     });
 
+    // Role yönetimi rotaları
+    Route::prefix('roles')->middleware(['auth:sanctum'])->group(function () {
+        // Herkes görüntüleyebilir
+        Route::get('/', [RoleController::class, 'index']);
+        Route::get('/{role}', [RoleController::class, 'show']);
+        Route::get('/user/{userId}', [RoleController::class, 'getUserRoles']);
+
+        // Sadece super_admin yapabilir
+        Route::middleware(['role:super_admin'])->group(function () {
+            Route::post('/', [RoleController::class, 'store']);
+            Route::put('/{role}', [RoleController::class, 'update']);
+            Route::delete('/{role}', [RoleController::class, 'destroy']);
+            Route::post('/assign', [RoleController::class, 'assignRole']);
+            Route::post('/remove', [RoleController::class, 'removeRole']);
+        });
+    });
+
+    // Profile Routes
+    Route::middleware('auth:api')->group(function () {
+        // Phone verification routes
+        Route::post('/profile/phone/verify/send', [PhoneVerificationController::class, 'sendCode']);
+        Route::post('/profile/phone/verify/confirm', [PhoneVerificationController::class, 'verifyCode']);
+        Route::post('/profile/phone/verify/resend', [PhoneVerificationController::class, 'resendCode']);
+        
+        // Get verification status
+        Route::get('/profile/phone/status', [PhoneVerificationController::class, 'getStatus']);
+    });
+
+    // Phone Verification Routes
+    Route::post('/verify/phone/send', [PhoneVerificationController::class, 'sendCode']);
+    Route::post('/verify/phone/verify', [PhoneVerificationController::class, 'verifyCode'])->middleware('auth:api');
+    Route::post('/verify/phone/resend', [PhoneVerificationController::class, 'resendCode']);
+
     // Filtreleme rotaları
     Route::get('notes/filter', [NoteController::class, 'filter']);
     Route::get('exams/filter', [ExamController::class, 'filter']);
-});
-
-// Protected routes that require authentication
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
 });
