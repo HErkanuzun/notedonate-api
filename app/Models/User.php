@@ -150,4 +150,19 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->is_active;
     }
+
+    /**
+     * Get the user's profile photo URL.
+     *
+     * @return string
+     */
+    public function getProfilePhotoUrlAttribute()
+    {
+        if ($this->profile_photo_path) {
+            return asset('storage/' . $this->profile_photo_path);
+        }
+        
+        // Return the frontend's default profile image URL
+        return url('/assets/default-profile.svg');
+    }
 }

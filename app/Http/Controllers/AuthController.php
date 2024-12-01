@@ -48,6 +48,7 @@ class AuthController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => bcrypt($request->password),
+                'profile_photo' => 'photo-default.jpg'
             ]);
 
             Log::info('User created successfully', ['user_id' => $user->id]);
