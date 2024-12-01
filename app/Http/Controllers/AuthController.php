@@ -20,7 +20,7 @@ class AuthController extends Controller
         try {
             $validator = validator($request->all(), [
                 'name' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:users',
+                'email' => 'required|string|email|max:255',
                 'password' => 'required|string|min:6|confirmed',
                 'password_confirmation' => 'required'
             ], [
@@ -29,7 +29,6 @@ class AuthController extends Controller
                 'name.max' => 'İsim en fazla 255 karakter olabilir.',
                 'email.required' => 'E-posta alanı zorunludur.',
                 'email.email' => 'Geçerli bir e-posta adresi giriniz.',
-                'email.unique' => 'Bu e-posta adresi zaten kayıtlı.',
                 'password.required' => 'Şifre alanı zorunludur.',
                 'password.min' => 'Şifre en az 6 karakter olmalıdır.',
                 'password.confirmed' => 'Şifreler eşleşmiyor.',
@@ -44,11 +43,26 @@ class AuthController extends Controller
                 ], 422);
             }
         
+            // Check if the email or phone already exists
+            if (User::where('email', $request->email)->exists()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Email already exists.'
+                ], 400);
+            }
+
+            if ($request->phone && User::where('phone', $request->phone)->exists()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Phone number already exists.'
+                ], 400);
+            }
+
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => bcrypt($request->password),
-                'profile_photo' => 'photo-default.jpg'
+                'profile_photo_path' => 'photo-default.jpg'
             ]);
 
             Log::info('User created successfully', ['user_id' => $user->id]);
