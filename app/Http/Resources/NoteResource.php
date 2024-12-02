@@ -15,17 +15,17 @@ class NoteResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'type'=> 'note',
-            'links'=> [
-                'self'=> env('APP_URL')
-            ],
-            'id'=> $this->id,
-            'attributes'=> [
-                'title'=>$this->title,
-                'content'=>$this->content,
-                'created_at'=>$this->created_at,
-                'storage_link'=>$this->storage_link,
-            ]
-            ];
+            'id' => $this->id,
+            'title' => $this->title,
+            'content' => $this->content,
+            'university' => $this->university,
+            'department' => $this->department,
+            'year' => $this->year,
+            'semester' => $this->semester,
+            'subject' => $this->subject,
+            'storage_link' => $this->storage_link,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at
+        ];
     }
 }

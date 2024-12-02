@@ -13,7 +13,7 @@ class NoteController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:sanctum');
+        // Remove the middleware from constructor since we'll handle it in routes
     }
 
     /**
@@ -22,7 +22,13 @@ class NoteController extends Controller
     public function index()
     {
         $notes = Note::where('user_id', Auth::id())->paginate(25);
-        return NoteResource::collection($notes);
+        $notesResource = NoteResource::collection($notes);
+        
+        return response()->json([
+            'status' => true,
+            'message' => 'Notes retrieved successfully',
+            'notes' => $notesResource
+        ]);
     }
 
     /**
@@ -137,5 +143,52 @@ class NoteController extends Controller
             'status' => 'success',
             'data' => $notes
         ]);
+    }
+
+    /**
+     * Get all public notes
+     */
+    public function getAllNotes()
+    {
+        try {
+            $notes = Note::with(['user'])
+                ->latest()
+                ->paginate(25);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'All notes retrieved successfully',
+                'data' => $notes
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error retrieving notes',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get a public note
+     */
+    public function getPublicNote($id)
+    {
+        try {
+            $note = Note::with(['user'])
+                ->findOrFail($id);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Note retrieved successfully',
+                'data' => $note
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error retrieving note',
+                'error' => $e->getMessage()
+            ], 404);
+        }
     }
 }

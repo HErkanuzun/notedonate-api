@@ -178,37 +178,25 @@ class AuthController extends Controller
         }
     }
 
-    public function verifyEmail(Request $request, $id) {
-        try {
-            $user = User::findOrFail($id);
-            
-            if (!$request->hasValidSignature()) {
-                return response()->json([
-                    "status" => false,
-                    "message" => "Invalid verification link or link has expired."
-                ], 400);
-            }
+    public function verifyEmail(Request $request)
+    {
+        $user = User::find($request->route('id'));
 
-            if (!$user->hasVerifiedEmail()) {
-                $user->markEmailAsVerified();
-                Log::info('Email verified successfully', ['user_id' => $user->id]);
-            }
-
+        if (!hash_equals(
+            (string) $request->route('hash'),
+            sha1($user->getEmailForVerification())
+        )) {
             return response()->json([
-                "status" => true,
-                "message" => "Email verified successfully"
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Email verification failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
-                "status" => false,
-                "message" => "Email verification failed: " . $e->getMessage(),
-            ], 500);
+                'status' => false,
+                'message' => 'Invalid verification link'
+            ], 400);
         }
+
+        if (!$user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+        }
+
+        return view('auth.verify-success');
     }
 
     public function logout(Request $request) {

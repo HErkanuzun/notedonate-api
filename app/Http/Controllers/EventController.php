@@ -205,4 +205,54 @@ class EventController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get all public events
+     */
+    public function getAllEvents()
+    {
+        try {
+            $events = Event::with(['user'])
+                ->latest()
+                ->paginate(25);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'All events retrieved successfully',
+                'data' => $events
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error retrieving events',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get a public event
+     */
+    public function getPublicEvent($id)
+    {
+        try {
+            $event = Event::with(['user'])
+                ->findOrFail($id);
+
+            // Etkinliğin görüntülenme sayısını artır
+            $event->increment('viewer');
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Event retrieved successfully',
+                'data' => $event
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error retrieving event',
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
 }

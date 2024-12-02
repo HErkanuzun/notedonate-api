@@ -182,4 +182,51 @@ class ExamController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get all public exams
+     */
+    public function getAllExams()
+    {
+        try {
+            $exams = Exam::with(['user'])
+                ->latest()
+                ->paginate(25);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'All exams retrieved successfully',
+                'data' => $exams
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error retrieving exams',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get a public exam
+     */
+    public function getPublicExam($id)
+    {
+        try {
+            $exam = Exam::with(['user', 'questions'])
+                ->findOrFail($id);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Exam retrieved successfully',
+                'data' => $exam
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error retrieving exam',
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
 }

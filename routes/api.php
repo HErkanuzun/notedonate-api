@@ -32,6 +32,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/register',[AuthController::class,'register']);
     Route::post('/login',[AuthController::class,'login']);
 
+    // Email verification routes
     Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
         ->name('verification.verify');
 
@@ -39,7 +40,7 @@ Route::prefix('v1')->group(function () {
         ->middleware(['throttle:6,1'])
         ->name('verification.send');
 
-    // Şifre sıfırlama route'ları
+    // Password reset routes
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])
         ->middleware(['throttle:6,1'])
         ->name('password.email');
@@ -50,15 +51,37 @@ Route::prefix('v1')->group(function () {
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])
         ->name('password.update');
 
+    // Public routes for viewing content
+    Route::prefix('public')->group(function () {
+        // Notes
+        Route::get('/notes', [NoteController::class, 'getAllNotes']);
+        Route::get('/notes/{id}', [NoteController::class, 'getPublicNote']);
+        
+        // Articles
+        Route::get('/articles', [ArticleController::class, 'getAllArticles']);
+        Route::get('/articles/{id}', [ArticleController::class, 'getPublicArticle']);
+        
+        // Exams
+        Route::get('/exams', [ExamController::class, 'getAllExams']);
+        Route::get('/exams/{id}', [ExamController::class, 'getPublicExam']);
+
+        // Events
+        Route::get('/events', [EventController::class, 'getAllEvents']);
+        Route::get('/events/{id}', [EventController::class, 'getPublicEvent']);
+    });
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout',[AuthController::class,'logout']);
         Route::get('/user', function (Request $request) {
             return $request->user();
         });
 
-        // Note routes
-        Route::apiResource('notes', NoteController::class);
-        Route::post('notes/{id}/like', [NoteController::class, 'like']);
+        // Protected Note routes (create, update, delete)
+        Route::get('/notes', [NoteController::class, 'index']);
+        Route::get('/note/{id}', [NoteController::class, 'show']);
+        Route::post('/note', [NoteController::class, 'store']);
+        Route::put('/note/{id}', [NoteController::class, 'update']);
+        Route::delete('/note/{id}', [NoteController::class, 'destroy']);
 
         // Exam routes
         Route::get('/exam',[ExamController::class,'index']);

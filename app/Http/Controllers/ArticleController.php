@@ -189,4 +189,51 @@ class ArticleController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get all public articles
+     */
+    public function getAllArticles()
+    {
+        try {
+            $articles = Article::with(['user'])
+                ->latest()
+                ->paginate(25);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'All articles retrieved successfully',
+                'data' => $articles
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error retrieving articles',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get a public article
+     */
+    public function getPublicArticle($id)
+    {
+        try {
+            $article = Article::with(['user'])
+                ->findOrFail($id);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Article retrieved successfully',
+                'data' => $article
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error retrieving article',
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
 }
