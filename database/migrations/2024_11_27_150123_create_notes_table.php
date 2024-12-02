@@ -13,12 +13,13 @@ return new class extends Migration
     {
         Schema::create('notes', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
-            $table->string('title',255);
+            $table->string('title', 255);
             $table->text('content');
             $table->text('storage_link')->nullable();
-            $table->integer('viewer');
-            $table->integer('like');
+            $table->integer('viewer')->default(0);
+            $table->integer('like')->default(0);
+            $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
+            $table->timestamps();
         });
     }
 

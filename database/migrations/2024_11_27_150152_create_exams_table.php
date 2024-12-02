@@ -18,11 +18,17 @@ return new class extends Migration
             $table->integer('total_marks'); // Toplam puan
             $table->integer('duration'); // Süre (dakika cinsinden)
             $table->unsignedBigInteger('created_by'); // Oluşturan kullanıcı ID'si
+            $table->unsignedBigInteger('university_id'); // 
+            $table->unsignedBigInteger('department_id'); // 
+            $table->integer('year')->nullable(); // 
+            $table->enum('semester', ['fall', 'spring', 'summer'])->nullable(); // 
             $table->enum('status', ['active', 'completed', 'scheduled'])->default('scheduled'); // Durum
             $table->timestamps(); // Oluşturulma ve güncellenme zamanları
 
             // Foreign key relationship with users table (users tablosu var varsayılıyor)
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('university_id')->references('id')->on('universities')->onDelete('cascade');
+            $table->foreign('department_id')->references('id')->on('departments')->onDelete('cascade');
         
         });
 

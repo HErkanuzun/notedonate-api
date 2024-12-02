@@ -4,8 +4,9 @@ namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
-
-
+use App\Models\University;
+use App\Models\Department;
+use App\Models\User;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Note>
@@ -22,15 +23,24 @@ class NoteFactory extends Factory
         // Şimdiki tarihten itibaren 3 ay öncesine kadar bir tarih oluştur
         $createdAt = $this->faker->dateTimeBetween('-3 months', 'now');
         $updatedAt = Carbon::instance($createdAt)->addDays(rand(0, 30)); // created_at sonrası rastgele bir gün
+        
+        $university = University::inRandomOrder()->first() ?? University::factory()->create();
+        $department = Department::where('university_id', $university->id)->inRandomOrder()->first() 
+            ?? Department::factory()->create(['university_id' => $university->id]);
+
         return [
             'title' => $this->faker->sentence(), // Rastgele bir başlık
-            'content' => $this->faker->paragraphs(1000, true), // Rastgele 3 paragraftan oluşan içerik
+            'content' => $this->faker->paragraphs(3, true), // Rastgele 3 paragraftan oluşan içerik
             'storage_link' => $this->faker->optional()->url(), // Rastgele veya boş bırakılabilir URL
-            'viewer' => $this->faker->numberBetween(0, 5000), // 0 ile 1000 arasında rastgele bir görüntüleme sayısı
+            'viewer' => $this->faker->numberBetween(0, 5000), // 0 ile 5000 arasında rastgele bir görüntüleme sayısı
             'like' => $this->faker->numberBetween(0, 500), // 0 ile 500 arasında rastgele beğeni sayısı
-            'created_at' =>$createdAt , // Şu anki zaman
-            'updated_at' =>$updatedAt , // Şu anki zaman
-
+            'created_by' => User::factory(),
+            'university_id' => $university->id,
+            'department_id' => $department->id,
+            'year' => $this->faker->numberBetween(2020, 2024),
+            'semester' => $this->faker->randomElement(['fall', 'spring', 'summer']),
+            'created_at' => $createdAt,
+            'updated_at' => $updatedAt,
         ];
     }
 }

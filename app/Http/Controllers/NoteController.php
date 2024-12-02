@@ -27,7 +27,16 @@ class NoteController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Notes retrieved successfully',
-            'notes' => $notesResource
+            'data' => [
+                'notes' => $notesResource,
+                'pagination' => [
+                    'current_page' => $notes->currentPage(),
+                    'last_page' => $notes->lastPage(),
+                    'per_page' => $notes->perPage(),
+                    'total' => $notes->total(),
+                    'has_more' => $notes->hasMorePages()
+                ]
+            ]
         ]);
     }
 
@@ -45,7 +54,11 @@ class NoteController extends Controller
             'like' => 0
         ]);
 
-        return new NoteResource($note);
+        return response()->json([
+            'status' => true,
+            'message' => 'Note created successfully',
+            'data' => new NoteResource($note)
+        ]);
     }
 
     /**
@@ -58,7 +71,11 @@ class NoteController extends Controller
         // Increment viewer count
         $note->increment('viewer');
         
-        return new NoteResource($note);
+        return response()->json([
+            'status' => true,
+            'message' => 'Note retrieved successfully',
+            'data' => new NoteResource($note)
+        ]);
     }
 
     /**
@@ -70,7 +87,11 @@ class NoteController extends Controller
         
         $note->update($request->validated());
         
-        return new NoteResource($note);
+        return response()->json([
+            'status' => true,
+            'message' => 'Note updated successfully',
+            'data' => new NoteResource($note)
+        ]);
     }
 
     /**
@@ -81,7 +102,10 @@ class NoteController extends Controller
         $note = Note::where('user_id', Auth::id())->findOrFail($id);
         $note->delete();
         
-        return response()->json(['message' => 'Note deleted successfully']);
+        return response()->json([
+            'status' => true,
+            'message' => 'Note deleted successfully'
+        ]);
     }
 
     /**
@@ -92,7 +116,67 @@ class NoteController extends Controller
         $note = Note::findOrFail($id);
         $note->increment('like');
         
-        return new NoteResource($note);
+        return response()->json([
+            'status' => true,
+            'message' => 'Note liked successfully',
+            'data' => new NoteResource($note)
+        ]);
+    }
+
+    /**
+     * Get all public notes
+     */
+    public function getAllNotes()
+    {
+        try {
+            $notes = Note::with(['user'])
+                ->latest()
+                ->paginate(25);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'All notes retrieved successfully',
+                'data' => [
+                    'notes' => NoteResource::collection($notes),
+                    'pagination' => [
+                        'current_page' => $notes->currentPage(),
+                        'last_page' => $notes->lastPage(),
+                        'per_page' => $notes->perPage(),
+                        'total' => $notes->total(),
+                        'has_more' => $notes->hasMorePages()
+                    ]
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error retrieving notes',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get a public note
+     */
+    public function getPublicNote($id)
+    {
+        try {
+            $note = Note::with(['user'])
+                ->findOrFail($id);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Note retrieved successfully',
+                'data' => new NoteResource($note)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error retrieving note',
+                'error' => $e->getMessage()
+            ], 404);
+        }
     }
 
     /**
@@ -140,55 +224,18 @@ class NoteController extends Controller
         $notes = $query->paginate($perPage);
 
         return response()->json([
-            'status' => 'success',
-            'data' => $notes
+            'status' => true,
+            'message' => 'Notes filtered successfully',
+            'data' => [
+                'notes' => NoteResource::collection($notes),
+                'pagination' => [
+                    'current_page' => $notes->currentPage(),
+                    'last_page' => $notes->lastPage(),
+                    'per_page' => $notes->perPage(),
+                    'total' => $notes->total(),
+                    'has_more' => $notes->hasMorePages()
+                ]
+            ]
         ]);
-    }
-
-    /**
-     * Get all public notes
-     */
-    public function getAllNotes()
-    {
-        try {
-            $notes = Note::with(['user'])
-                ->latest()
-                ->paginate(25);
-
-            return response()->json([
-                'status' => true,
-                'message' => 'All notes retrieved successfully',
-                'data' => $notes
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Error retrieving notes',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Get a public note
-     */
-    public function getPublicNote($id)
-    {
-        try {
-            $note = Note::with(['user'])
-                ->findOrFail($id);
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Note retrieved successfully',
-                'data' => $note
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Error retrieving note',
-                'error' => $e->getMessage()
-            ], 404);
-        }
     }
 }
