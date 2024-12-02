@@ -15,6 +15,7 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PhoneVerificationController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -70,11 +71,16 @@ Route::prefix('v1')->group(function () {
         Route::get('/events/{id}', [EventController::class, 'getPublicEvent']);
     });
 
+    // Public Article routes
+    Route::get('/articles', [ArticleController::class, 'index']);
+    Route::get('/articles/{article}', [ArticleController::class, 'show']);
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout',[AuthController::class,'logout']);
         Route::get('/user', function (Request $request) {
             return $request->user();
         });
+        Route::get('/user/data', [UserController::class, 'getUserData']);
 
         // Protected Note routes (create, update, delete)
         Route::get('/notes', [NoteController::class, 'index']);
@@ -82,6 +88,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/note', [NoteController::class, 'store']);
         Route::put('/note/{id}', [NoteController::class, 'update']);
         Route::delete('/note/{id}', [NoteController::class, 'destroy']);
+
+        // Protected Article routes
+        Route::post('/articles', [ArticleController::class, 'store']);
+        Route::put('/articles/{article}', [ArticleController::class, 'update']);
+        Route::delete('/articles/{article}', [ArticleController::class, 'destroy']);
 
         // Exam routes
         Route::get('/exam',[ExamController::class,'index']);

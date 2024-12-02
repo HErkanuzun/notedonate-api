@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Role; // Role modelini dahil et
 use App\Models\Profile; // Profile modelini dahil et
+use App\Models\Article; // Article modelini dahil et
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -44,6 +45,14 @@ class User extends Authenticatable implements MustVerifyEmail
         'two_factor_recovery_codes',
         'two_factor_secret',
     ];
+
+    /**
+     * Get the articles created by the user.
+     */
+    public function articles()
+    {
+        return $this->hasMany(Article::class, 'author_id');
+    }
 
     /**
      * The accessors to append to the model's array form.
@@ -159,10 +168,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getProfilePhotoUrlAttribute()
     {
         if ($this->profile_photo_path) {
-            return asset('storage/' . $this->profile_photo_path);
+            return asset('storage/' . $this->profile_photo_url);
         }
         
         // Return the frontend's default profile image URL
-        return url('/assets/default-profile.svg');
+        return url('/assets`/photo-default.jpg');
     }
 }

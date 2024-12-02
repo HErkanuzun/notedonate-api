@@ -33,12 +33,13 @@ class ArticleFactory extends Factory
             'slug' => $slug,
             'content' => $this->faker->paragraphs(3, true),
             'excerpt' => $this->faker->paragraph(),
-            'featured_image' => null, // Geçici olarak devre dışı bırakıldı
+            'featured_image' => 'https://images.unsplash.com/photo-1635942046031-041e9baea8bd?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
             'status' => $this->faker->randomElement(['draft', 'published', 'archived']),
             'author_id' => User::factory(),
             'published_at' => $this->faker->dateTimeBetween('-1 year', 'now'),
             'view_count' => $this->faker->numberBetween(0, 1000),
             'like_count' => $this->faker->numberBetween(0, 100),
+            'storage_link' => 'https://images.unsplash.com/photo-1635942046031-041e9baea8bd?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
         ];
     }
 

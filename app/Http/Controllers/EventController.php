@@ -11,9 +11,7 @@ class EventController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api');
-        // Sadece show, update ve destroy işlemleri için ownership kontrolü
-        $this->middleware('check.ownership')->only(['show', 'update', 'destroy']);
+        // Constructor'dan middleware kaldırıldı
     }
 
     /**

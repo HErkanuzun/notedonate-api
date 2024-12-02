@@ -10,15 +10,13 @@ class ArticleController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api');
-        $this->middleware('check.ownership')->only(['show', 'update', 'destroy']);
+        // Constructor'dan middleware kaldırıldı
     }
 
     public function index(Request $request)
     {
         try {
             $query = Article::query()
-                ->where('created_by', auth()->id())
                 ->with('creator');
 
             // Filtreleme
@@ -30,31 +28,28 @@ class ArticleController extends Controller
                 $query->where('category', $request->category);
             }
 
-            if ($request->has('tag')) {
-                $query->whereJsonContains('tags', $request->tag);
-            }
-
             // Sıralama
-            $sortBy = $request->get('sort_by', 'created_at');
-            $sortOrder = $request->get('sort_order', 'desc');
+            $sortBy = $request->input('sort_by', 'created_at');
+            $sortOrder = $request->input('sort_order', 'desc');
             $query->orderBy($sortBy, $sortOrder);
 
-            $articles = $query->paginate($request->get('per_page', 10));
+            // Sayfalama
+            $perPage = $request->input('per_page', 10);
+            $articles = $query->paginate($perPage);
 
             return response()->json([
-                'status' => 'success',
-                'data' => ArticleResource::collection($articles),
-                'meta' => [
-                    'total' => $articles->total(),
+                'articles' => ArticleResource::collection($articles),
+                'pagination' => [
                     'current_page' => $articles->currentPage(),
                     'last_page' => $articles->lastPage(),
-                    'per_page' => $articles->perPage()
+                    'per_page' => $articles->perPage(),
+                    'total' => $articles->total(),
+                    'has_more' => $articles->hasMorePages()
                 ]
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to fetch articles',
+                'message' => 'Articles could not be retrieved',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -193,17 +188,55 @@ class ArticleController extends Controller
     /**
      * Get all public articles
      */
-    public function getAllArticles()
+    public function getAllArticles(Request $request)
     {
         try {
-            $articles = Article::with(['user'])
-                ->latest()
-                ->paginate(25);
+            $query = Article::query()
+                ->with('creator')
+                ->latest();
+
+            // Filtreleme
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->has('category')) {
+                $query->where('category', $request->category);
+            }
+
+            $articles = $query->paginate($request->get('per_page', 25));
+            
+            $data = $articles->getCollection()->map(function ($article) {
+                return [
+                    'id' => $article->id,
+                    'title' => $article->title,
+                    'content' => $article->content,
+                    'featured_image' => $article->featured_image,
+                    'storage_link' => $article->storage_link,
+                    'excerpt' => $article->excerpt,
+                    'status' => $article->status,
+                    'author' => $article->creator ? [
+                        'id' => $article->creator->id,
+                        'name' => $article->creator->name
+                    ] : null,
+                    'created_at' => $article->created_at,
+                    'updated_at' => $article->updated_at
+                ];
+            });
 
             return response()->json([
                 'status' => true,
-                'message' => 'All articles retrieved successfully',
-                'data' => $articles
+                'message' => 'Articles retrieved successfully',
+                'data' => [
+                    'articles' => $data,
+                    'pagination' => [
+                        'current_page' => $articles->currentPage(),
+                        'last_page' => $articles->lastPage(),
+                        'per_page' => $articles->perPage(),
+                        'total' => $articles->total(),
+                        'has_more' => $articles->hasMorePages()
+                    ]
+                ]
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -220,13 +253,27 @@ class ArticleController extends Controller
     public function getPublicArticle($id)
     {
         try {
-            $article = Article::with(['user'])
-                ->findOrFail($id);
+            $article = Article::with(['creator'])->findOrFail($id);
+            
+            $data = [
+                'id' => $article->id,
+                'title' => $article->title,
+                'content' => $article->content,
+                'featured_image' => $article->featured_image,
+                'excerpt' => $article->excerpt,
+                'status' => $article->status,
+                'author' => $article->creator ? [
+                    'id' => $article->creator->id,
+                    'name' => $article->creator->name
+                ] : null,
+                'created_at' => $article->created_at,
+                'updated_at' => $article->updated_at
+            ];
 
             return response()->json([
                 'status' => true,
                 'message' => 'Article retrieved successfully',
-                'data' => $article
+                'data' => $data
             ]);
         } catch (\Exception $e) {
             return response()->json([

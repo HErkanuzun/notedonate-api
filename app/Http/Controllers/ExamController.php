@@ -11,8 +11,7 @@ class ExamController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api');
-        $this->middleware('check.ownership')->only(['show', 'update', 'destroy']);
+        // Constructor'dan middleware kaldırıldı
     }
 
     public function index(Request $request)
@@ -186,17 +185,41 @@ class ExamController extends Controller
     /**
      * Get all public exams
      */
-    public function getAllExams()
+    public function getAllExams(Request $request)
     {
         try {
-            $exams = Exam::with(['user'])
-                ->latest()
-                ->paginate(25);
+            $query = Exam::query()
+                ->with('creator')
+                ->latest();
+
+            // Filtreleme
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->has('subject')) {
+                $query->where('subject', $request->subject);
+            }
+
+            if ($request->has('exam_date')) {
+                $query->whereDate('exam_date', $request->exam_date);
+            }
+
+            $exams = $query->paginate($request->get('per_page', 25));
 
             return response()->json([
                 'status' => true,
-                'message' => 'All exams retrieved successfully',
-                'data' => $exams
+                'message' => 'Exams retrieved successfully',
+                'data' => [
+                    'exams' => ExamResource::collection($exams),
+                    'pagination' => [
+                        'current_page' => $exams->currentPage(),
+                        'last_page' => $exams->lastPage(),
+                        'per_page' => $exams->perPage(),
+                        'total' => $exams->total(),
+                        'has_more' => $exams->hasMorePages()
+                    ]
+                ]
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -213,13 +236,13 @@ class ExamController extends Controller
     public function getPublicExam($id)
     {
         try {
-            $exam = Exam::with(['user', 'questions'])
+            $exam = Exam::with(['creator'])
                 ->findOrFail($id);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Exam retrieved successfully',
-                'data' => $exam
+                'data' => new ExamResource($exam)
             ]);
         } catch (\Exception $e) {
             return response()->json([

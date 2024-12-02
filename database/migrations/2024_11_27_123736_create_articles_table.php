@@ -16,13 +16,14 @@ return new class extends Migration
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('content');
-            $table->string('featured_image')->nullable();
+            $table->string('featured_image')->default('https://images.unsplash.com/photo-1635942046031-041e9baea8bd?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')->nullable();
             $table->text('excerpt')->nullable();
             $table->string('status')->default('draft'); // draft, published, archived
             $table->unsignedBigInteger('author_id');
             $table->timestamp('published_at')->nullable();
             $table->unsignedInteger('view_count')->default(0);
             $table->unsignedInteger('like_count')->default(0);
+            $table->text('storage_link')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

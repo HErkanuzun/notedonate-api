@@ -36,6 +36,7 @@ class ExamFactory extends Factory
             'status' => $this->faker->randomElement(['active', 'draft', 'completed']), // Durum
             'university_id' => $university->id,
             'department_id' => $department->id,
+            'storage_link' => "https://images.unsplash.com/photo-1491841651911-c44c30c34548?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
             'year' => $this->faker->numberBetween(2020, 2024),
             'semester' => $this->faker->randomElement(['fall', 'spring', 'summer']),
             'created_at' => $this->faker->dateTimeBetween(Carbon::now()->subMonths(3), Carbon::now()), // Son 3 ay içinde rastgele tarih

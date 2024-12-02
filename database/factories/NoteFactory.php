@@ -31,10 +31,10 @@ class NoteFactory extends Factory
         return [
             'title' => $this->faker->sentence(), // Rastgele bir başlık
             'content' => $this->faker->paragraphs(3, true), // Rastgele 3 paragraftan oluşan içerik
-            'storage_link' => $this->faker->optional()->url(), // Rastgele veya boş bırakılabilir URL
+            'storage_link' => "https://images.unsplash.com/photo-1506962240359-bd03fbba0e3d?q=80&w=2665&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Rastgele veya boş bırakılabilir URL
             'viewer' => $this->faker->numberBetween(0, 5000), // 0 ile 5000 arasında rastgele bir görüntüleme sayısı
             'like' => $this->faker->numberBetween(0, 500), // 0 ile 500 arasında rastgele beğeni sayısı
-            'created_by' => User::factory(),
+            'created_by' => 1,
             'university_id' => $university->id,
             'department_id' => $department->id,
             'year' => $this->faker->numberBetween(2020, 2024),

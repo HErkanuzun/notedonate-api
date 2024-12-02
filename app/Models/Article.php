@@ -50,6 +50,14 @@ class Article extends Model
     }
 
     /**
+     * Get the user that created the article.
+     */
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'author_id');
+    }
+
+    /**
      * Get the author of the article.
      */
     public function author()

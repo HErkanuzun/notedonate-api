@@ -19,6 +19,7 @@ return new class extends Migration
             $table->integer('duration'); // Süre (dakika cinsinden)
             $table->unsignedBigInteger('created_by'); // Oluşturan kullanıcı ID'si
             $table->unsignedBigInteger('university_id'); // 
+            $table->text('storage_link')->nullable();
             $table->unsignedBigInteger('department_id'); // 
             $table->integer('year')->nullable(); // 
             $table->enum('semester', ['fall', 'spring', 'summer'])->nullable(); // 
