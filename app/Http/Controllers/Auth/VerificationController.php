@@ -27,15 +27,13 @@ class VerificationController extends Controller
         }
 
         if ($user->hasVerifiedEmail()) {
-            return response('Email zaten doğrulanmış.', 200)
-                ->header('Content-Type', 'text/plain');
+            return redirect('http://localhost:5173/login');
         }
 
         if ($user->markEmailAsVerified()) {
             event(new Verified($user));
         }
 
-        return response('Mesajınız onaylanmıştır.', 200)
-            ->header('Content-Type', 'text/plain');
+        return redirect('http://localhost:5173/login');
     }
 }

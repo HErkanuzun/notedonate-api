@@ -28,8 +28,8 @@ class AuthController extends Controller
         // Send verification email
         event(new Registered($user));
 
-        // Create token
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Create token with specific abilities and expiration
+        $token = $user->createToken('auth_token', ['*'], now()->addDay())->plainTextToken;
 
         return response()->json([
             'status' => 'success',
@@ -48,7 +48,12 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
-            $token = $user->createToken('auth_token')->plainTextToken;
+            
+            // Revoke all existing tokens
+            $user->tokens()->delete();
+            
+            // Create new token with specific abilities and device name
+            $token = $user->createToken('auth_token', ['*'], now()->addDay())->plainTextToken;
 
             // Include all necessary user data
             $userData = [
@@ -97,22 +102,72 @@ class AuthController extends Controller
      */
     public function userData()
     {
-        $user = auth()->user();
-        
-        return response()->json([
-            'status' => 'success',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'profile_photo_url' => $user->profile_photo_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name),
-                'email_verified_at' => $user->email_verified_at,
-                'created_at' => $user->created_at,
-                'notes' => $user->notes,
-                'exams' => $user->exams,
-                'articles' => $user->articles,
-            ]
-        ]);
+        try {
+            $user = auth()->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'profile_photo_url' => $user->profile_photo_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name),
+                    'email_verified_at' => $user->email_verified_at,
+                    'created_at' => $user->created_at,
+                    'notes' => $user->notes,
+                    'exams' => $user->exams,
+                    'articles' => $user->articles,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while fetching user data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify token and return user data if valid
+     */
+    public function verifyToken(Request $request)
+    {
+        try {
+            $user = $request->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid token'
+                ], 401);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'profile_photo_url' => $user->profile_photo_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name),
+                    'email_verified_at' => $user->email_verified_at,
+                    'created_at' => $user->created_at
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Token verification failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

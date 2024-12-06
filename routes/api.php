@@ -53,9 +53,12 @@ Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('/register', [AuthController::class, 'register']);
         Route::post('/login', [AuthController::class, 'login']);
+        Route::post('/verify-token', [AuthController::class, 'verifyToken']);
         Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-        Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
-        Route::get('/user', [AuthController::class, 'userData'])->middleware('auth:sanctum');
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::get('/user', [AuthController::class, 'userData']);
+            Route::post('/logout', [AuthController::class, 'logout']);
+        });
     });
 
     // Article Routes
