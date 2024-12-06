@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('question_type', 50); // Soru tipi (çoktan seçmeli, açık uçlu, vb.)
             $table->json('options')->nullable(); // Cevap seçenekleri (varsa, çoktan seçmeli sorular için)
             $table->integer('correct_option')->nullable(); // Doğru seçenek (çoktan seçmeli sorular için)
+            $table->string('correct_answer')->nullable(); // Doğru cevap sütunu
+            $table->integer('points')->nullable(); // Puan sütunu
             $table->timestamps();
 
             // Foreign key: exam_id, exam tablosundaki id ile ilişkilendirilecek

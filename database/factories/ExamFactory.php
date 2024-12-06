@@ -19,16 +19,19 @@ class ExamFactory extends Factory
      */
     protected $model = Exam::class;
 
-    public function definition()
+    public function definition(): array
     {
+        $startDate = $this->faker->dateTimeBetween('now', '+1 month');
+        $endDate = clone $startDate;
+        $endDate->modify('+' . rand(1, 7) . ' days');
+
         return [
-            'name' => $this->faker->sentence, // Sınav adı
-            'description' => $this->faker->paragraph, // Açıklama
-            'total_marks' => $this->faker->numberBetween(50, 100), // Toplam puan
-            'duration' => $this->faker->numberBetween(30, 180), // Süre (dakika)
-            'created_by' => User::factory(), // Sınavı oluşturan kullanıcı
-            'status' => $this->faker->randomElement(['active', 'completed', 'scheduled']), // Durum
-            'created_at' => $this->faker->dateTimeBetween(Carbon::now()->subMonths(3), Carbon::now()), // Son 3 ay içinde rastgele tarih
+            'name' => $this->faker->sentence(),
+            'description' => $this->faker->paragraph(),
+            'total_marks' => $this->faker->numberBetween(50, 100),
+            'duration' => $this->faker->randomElement([30, 45, 60, 90, 120]),
+            'created_by' => \App\Models\User::factory(),
+            'status' => $this->faker->randomElement(['active', 'completed', 'scheduled']),
         ];
     }
 }

@@ -18,14 +18,22 @@ class ExamQuestionFactory extends Factory
      */
     protected $model = ExamQuestion::class;
 
-    public function definition()
+    public function definition(): array
     {
+        $options = [
+            $this->faker->unique()->sentence(),
+            $this->faker->unique()->sentence(),
+            $this->faker->unique()->sentence(),
+            $this->faker->unique()->sentence(),
+        ];
+        
         return [
-            'exam_id' => Exam::factory(), // Sınav ile ilişkilendir
-            'question' => $this->faker->sentence, // Soru metni
-            'question_type' => $this->faker->randomElement(['multiple_choice', 'open_ended', 'true_or_false', 'fill_in_the_blank']), // Soru tipi
-            'options' => $this->faker->randomElement([json_encode(['A' => 'Option 1', 'B' => 'Option 2', 'C' => 'Option 3', 'D' => 'Option 4']), null]), // Seçenekler
-            'correct_option' => $this->faker->numberBetween(1, 4), // Doğru seçenek (çoktan seçmeli)
+            'exam_id' => \App\Models\Exam::factory(),
+            'question' => $this->faker->paragraph(),
+            'correct_answer' => $options[0],
+            'options' => json_encode($options),
+            'points' => $this->faker->randomElement([1, 2, 3, 4, 5]),
+            'question_type' => $this->faker->randomElement(['multiple_choice', 'true_false', 'short_answer']),
         ];
     }
 }

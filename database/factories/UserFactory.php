@@ -26,6 +26,9 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $universities = ['İstanbul Üniversitesi', 'Boğaziçi Üniversitesi', 'ODTÜ', 'İTÜ', 'Yıldız Teknik Üniversitesi'];
+        $departments = ['Bilgisayar Mühendisliği', 'Elektrik-Elektronik Mühendisliği', 'Makine Mühendisliği', 'Endüstri Mühendisliği'];
+        
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
@@ -34,7 +37,17 @@ class UserFactory extends Factory
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
             'remember_token' => Str::random(10),
-            'profile_photo_path' => null,
+            'profile_photo_url' => 'https://ui-avatars.com/api/?name=' . urlencode(fake()->name()) . '&color=7F9CF5&background=EBF4FF',
+            'bio' => fake()->paragraph(),
+            'university' => fake()->randomElement($universities),
+            'department' => fake()->randomElement($departments),
+            'followers' => fake()->numberBetween(0, 1000),
+            'following' => fake()->numberBetween(0, 1000),
+            'favorites' => json_encode([
+                'notes' => [],
+                'exams' => [],
+                'articles' => []
+            ]),
             'current_team_id' => null,
         ];
     }

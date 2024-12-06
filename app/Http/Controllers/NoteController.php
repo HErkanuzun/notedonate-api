@@ -23,6 +23,17 @@ class NoteController extends Controller
 
     }
 
+    /**
+     * Display a listing of public notes.
+     */
+    public function publicIndex()
+    {
+        $notes = Note::where('status', 'public')->get();
+        return response()->json([
+            'status' => 'success',
+            'data' => $notes
+        ]);
+    }
 
     /**
      * Store a newly created resource in storage.
@@ -36,6 +47,7 @@ class NoteController extends Controller
             $storenote->storage_link = $request->storage_link;
             $storenote->viewer = $request->viewer;
             $storenote->like = $request->like;
+            $storenote->status = $request->status;
             $storenote->save();
             return response()->json(
                 [
@@ -91,6 +103,9 @@ class NoteController extends Controller
         
         if (isset($request->like)) {
             $storenote->like = $request->like;
+        }
+        if (isset($request->status)) {
+            $storenote->status = $request->status;
         }
         $storenote->save();
         return response()->json(

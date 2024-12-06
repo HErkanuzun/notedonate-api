@@ -185,4 +185,16 @@ class ArticleController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Display a listing of public articles.
+     */
+    public function publicIndex()
+    {
+        $articles = Article::where('status', 'published')->get();
+        return response()->json([
+            'status' => 'success',
+            'data' => $articles
+        ]);
+    }
 }

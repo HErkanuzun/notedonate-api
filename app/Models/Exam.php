@@ -27,6 +27,11 @@ class Exam extends Model
         return $this->hasMany(ExamQuestion::class);
     }
 
+    public function examQuestion()
+    {
+        return $this->hasMany(ExamQuestion::class);
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');

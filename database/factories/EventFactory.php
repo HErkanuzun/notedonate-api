@@ -20,17 +20,18 @@ class EventFactory extends Factory
     public function definition(): array
     {
         $startDate = $this->faker->dateTimeBetween('now', '+2 months');
-        $endDate = Carbon::instance($startDate)->addHours($this->faker->numberBetween(1, 48));
+        $endDate = clone $startDate;
+        $endDate->modify('+' . rand(1, 48) . ' hours');
 
         return [
-            'title' => $this->faker->sentence(3),
-            'description' => $this->faker->paragraph,
+            'title' => $this->faker->sentence(),
+            'description' => $this->faker->paragraphs(2, true),
             'start_date' => $startDate,
             'end_date' => $endDate,
-            'location' => $this->faker->optional()->address,
-            'type' => $this->faker->randomElement(['general', 'meeting', 'deadline', 'workshop']),
+            'created_by' => \App\Models\User::factory(),
+            'location' => $this->faker->optional()->address(),
+            'type' => $this->faker->randomElement(['general', 'meeting', 'deadline']),
             'status' => $this->faker->randomElement(['upcoming', 'ongoing', 'completed', 'cancelled']),
-            'created_by' => User::factory()
         ];
     }
 

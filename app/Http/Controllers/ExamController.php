@@ -22,6 +22,18 @@ class ExamController extends Controller
     }
 
     /**
+     * Display a listing of public exams.
+     */
+    public function publicIndex()
+    {
+        $exams = Exam::where('status', 'public')->get();
+        return response()->json([
+            'status' => 'success',
+            'data' => $exams
+        ]);
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)

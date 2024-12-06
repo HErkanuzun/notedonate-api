@@ -44,7 +44,7 @@ class Article extends Model
     private function createUniqueSlug($title)
     {
         $slug = Str::slug($title);
-        $count = static::whereRaw("slug RLIKE '^{$slug}(-[0-9]+)?$'")->count();
+        $count = static::where('slug', $slug)->orWhere('slug', 'LIKE', $slug . '-%')->count();
         
         return $count ? "{$slug}-{$count}" : $slug;
     }

@@ -134,4 +134,16 @@ class EventController extends Controller
             'data' => $events
         ]);
     }
+
+    /**
+     * Display a listing of public events.
+     */
+    public function publicIndex()
+    {
+        $events = Event::where('status', 'public')->get();
+        return response()->json([
+            'status' => 'success',
+            'data' => $events
+        ]);
+    }
 }
