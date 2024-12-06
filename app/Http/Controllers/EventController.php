@@ -38,7 +38,7 @@ class EventController extends Controller
         $events = $query->get();
 
         return response()->json([
-            'status' => 'success',
+            //'status' => 'upcoming',
             'data' => $events
         ]);
     }

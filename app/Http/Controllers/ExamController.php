@@ -24,12 +24,63 @@ class ExamController extends Controller
     /**
      * Display a listing of public exams.
      */
-    public function publicIndex()
+    public function publicIndex(Request $request)
     {
-        $exams = Exam::where('status', 'public')->get();
+        $query = Exam::query()->where('status', 'scheduled');
+
+        // Apply search filter
+        if ($request->has('search')) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhere('subject', 'like', "%{$searchTerm}%")
+                  ->orWhere('university', 'like', "%{$searchTerm}%")
+                  ->orWhere('department', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        // Apply individual filters
+        if ($request->has('university')) {
+            $query->where('university', $request->input('university'));
+        }
+
+        if ($request->has('department')) {
+            $query->where('department', $request->input('department'));
+        }
+
+        if ($request->has('year')) {
+            $query->where('year', $request->input('year'));
+        }
+
+        if ($request->has('semester')) {
+            $query->where('semester', $request->input('semester'));
+        }
+
+        // Get unique values for filter options
+        $universities = Exam::distinct()->pluck('university')->filter()->values();
+        $departments = Exam::distinct()->pluck('department')->filter()->values();
+        $years = Exam::distinct()->pluck('year')->filter()->values();
+        $semesters = Exam::distinct()->pluck('semester')->filter()->values();
+
+        // Paginate results
+        $exams = $query->latest()->paginate(12);
+
         return response()->json([
-            'status' => 'success',
-            'data' => $exams
+            'data' => [
+                'exams' => $exams->items(),
+                'meta' => [
+                    'current_page' => $exams->currentPage(),
+                    'last_page' => $exams->lastPage(),
+                    'per_page' => $exams->perPage(),
+                    'total' => $exams->total(),
+                ],
+                'filters' => [
+                    'universities' => $universities,
+                    'departments' => $departments,
+                    'years' => $years,
+                    'semesters' => $semesters,
+                ]
+            ]
         ]);
     }
 
