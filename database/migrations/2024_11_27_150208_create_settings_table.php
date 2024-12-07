@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('type')->default('text'); // Değer tipi (text, boolean, json, vb.)
             $table->text('description')->nullable(); // Ayar açıklaması
             $table->boolean('is_public')->default(true); // Genel görünürlük
+            $table->foreignId('media_id')->nullable()->constrained('media');
             $table->timestamps();
         });
     }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Media; // Add this line to import the Media model
 
 class Setting extends Model
 {
@@ -54,5 +55,13 @@ class Setting extends Model
     public static function group($group)
     {
         return static::where('group', $group)->get();
+    }
+
+    /**
+     * Morph many relationship to Media model
+     */
+    public function media()
+    {
+        return $this->morphMany(Media::class, 'mediaable');
     }
 }

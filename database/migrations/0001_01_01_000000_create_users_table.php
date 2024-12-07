@@ -17,9 +17,16 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->rememberToken();
             $table->foreignId('current_team_id')->nullable();
             $table->string('profile_photo_path', 2048)->nullable();
+            $table->string('profile_photo_url', 2048)->nullable();
+            $table->text('bio')->nullable();
+            $table->string('university')->nullable();
+            $table->string('department')->nullable();
+            $table->integer('followers')->default(0);
+            $table->integer('following')->default(0);
+            $table->json('favorites')->nullable(); // {notes: [], exams: [], articles: []}
+            $table->rememberToken();
             $table->timestamps();
         });
 

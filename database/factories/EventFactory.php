@@ -30,6 +30,7 @@ class EventFactory extends Factory
             'end_date' => $endDate,
             'created_by' => \App\Models\User::factory(),
             'location' => $this->faker->optional()->address(),
+            'cover_image' => $this->faker->optional()->imageUrl() ?: 'https://images.unsplash.com/photo-1623074716850-ba4c90d49f2f?q=80&w=2598&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
             'type' => $this->faker->randomElement(['general', 'meeting', 'deadline']),
             'status' => $this->faker->randomElement(['upcoming', 'ongoing', 'completed', 'cancelled']),
         ];

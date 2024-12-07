@@ -23,6 +23,7 @@ return new class extends Migration
             $table->timestamp('published_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
+            $table->foreignId('media_id')->nullable()->constrained('media');
 
             $table->foreign('author_id')->references('id')->on('users')->onDelete('cascade');
         });
@@ -44,7 +45,7 @@ return new class extends Migration
 
             $table->foreign('article_id')->references('id')->on('articles')->onDelete('cascade');
             $table->foreign('category_id')->references('id')->on('article_categories')->onDelete('cascade');
-
+            $table->string('cover_image')->default('https://images.unsplash.com/photo-1733077151496-5e2701fc64eb?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')->nullable();
             $table->primary(['article_id', 'category_id']);
         });
     }

@@ -3,18 +3,23 @@
 namespace App\Models;
 
 use App\Notifications\CustomVerifyEmail;
+use App\Traits\HasStorage;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Note;
 use App\Models\Exam;
 use App\Models\Article;
+use App\Models\Event;
+use App\Models\Comment;
+use App\Models\Storage;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasStorage;
 
     /**
      * The attributes that are mass assignable.
@@ -25,13 +30,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
-        'profile_photo_url',
-        'bio',
         'university',
         'department',
-        'followers',
-        'following',
-        'favorites'
+        'role'
     ];
 
     /**
@@ -51,7 +52,6 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'favorites' => 'array',
         'password' => 'hashed',
     ];
 
@@ -76,7 +76,57 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function articles()
     {
-        return $this->hasMany(Article::class);
+        return $this->hasMany(Article::class, 'author_id');
+    }
+
+    /**
+     * Get all events created by the user.
+     */
+    public function events()
+    {
+        return $this->hasMany(Event::class, 'created_by');
+    }
+
+    /**
+     * Get all comments made by the user.
+     */
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Get all files for the user.
+     */
+    public function files()
+    {
+        return $this->belongsToMany(Storage::class, 'user_storage')
+                    ->withPivot('type')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Get user's avatar.
+     */
+    public function avatar()
+    {
+        return $this->belongsToMany(Storage::class, 'user_storage')
+                    ->withPivot('type')
+                    ->wherePivot('type', 'avatar')
+                    ->withTimestamps()
+                    ->latest()
+                    ->first();
+    }
+
+    /**
+     * Get user's documents.
+     */
+    public function documents()
+    {
+        return $this->belongsToMany(Storage::class, 'user_storage')
+                    ->withPivot('type')
+                    ->wherePivot('type', 'document')
+                    ->withTimestamps();
     }
 
     /**

@@ -11,15 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('personal_access_tokens', function (Blueprint $table) {
+        Schema::create('universities', function (Blueprint $table) {
             $table->id();
-            $table->morphs('tokenable');
             $table->string('name');
-            $table->string('token', 64)->unique();
-            $table->text('abilities')->nullable();
-            $table->timestamp('last_used_at')->nullable();
-            $table->timestamp('expires_at')->nullable();
+            $table->string('city')->nullable();
+            $table->string('country')->default('Turkey');
+            $table->string('website')->nullable();
+            $table->text('description')->nullable();
+            $table->string('logo')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -28,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('personal_access_tokens');
+        Schema::dropIfExists('universities');
     }
 };

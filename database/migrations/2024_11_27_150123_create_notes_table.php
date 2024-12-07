@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('cover_image')->default('https://images.unsplash.com/photo-1733077151496-5e2701fc64eb?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')->nullable();
             $table->string('storage_path')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

@@ -3,21 +3,34 @@
 namespace App\Http\Controllers;
 
 use App\Models\Exam;
+use App\Http\Resources\ExamResource;
 use App\Http\Requests\StoreExamRequest;
 use App\Http\Requests\UpdateExamRequest;
 use Illuminate\Http\Request;
 
 class ExamController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum')->except(['publicIndex']);
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $exams = Exam::with('questions')->get();
+        $exams = Exam::with(['questions', 'user'])->latest()->paginate(12);
+        
         return response()->json([
             'status' => 'success',
-            'data' => $exams
+            'data' => ExamResource::collection($exams),
+            'meta' => [
+                'current_page' => $exams->currentPage(),
+                'last_page' => $exams->lastPage(),
+                'per_page' => $exams->perPage(),
+                'total' => $exams->total()
+            ]
         ]);
     }
 
@@ -26,62 +39,36 @@ class ExamController extends Controller
      */
     public function publicIndex(Request $request)
     {
-        $query = Exam::query()->where('status', 'scheduled');
+        try {
+            $query = Exam::with(['questions', 'user'])->latest();
 
-        // Apply search filter
-        if ($request->has('search')) {
-            $searchTerm = $request->input('search');
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('title', 'like', "%{$searchTerm}%")
-                  ->orWhere('subject', 'like', "%{$searchTerm}%")
-                  ->orWhere('university', 'like', "%{$searchTerm}%")
-                  ->orWhere('department', 'like', "%{$searchTerm}%");
-            });
-        }
+            if ($request->has('search')) {
+                $searchTerm = $request->input('search');
+                $query->where(function ($q) use ($searchTerm) {
+                    $q->where('title', 'like', "%{$searchTerm}%")
+                      ->orWhere('subject', 'like', "%{$searchTerm}%");
+                });
+            }
 
-        // Apply individual filters
-        if ($request->has('university')) {
-            $query->where('university', $request->input('university'));
-        }
-
-        if ($request->has('department')) {
-            $query->where('department', $request->input('department'));
-        }
-
-        if ($request->has('year')) {
-            $query->where('year', $request->input('year'));
-        }
-
-        if ($request->has('semester')) {
-            $query->where('semester', $request->input('semester'));
-        }
-
-        // Get unique values for filter options
-        $universities = Exam::distinct()->pluck('university')->filter()->values();
-        $departments = Exam::distinct()->pluck('department')->filter()->values();
-        $years = Exam::distinct()->pluck('year')->filter()->values();
-        $semesters = Exam::distinct()->pluck('semester')->filter()->values();
-
-        // Paginate results
-        $exams = $query->latest()->paginate(12);
-
-        return response()->json([
-            'data' => [
-                'exams' => $exams->items(),
+            $exams = $query->paginate(12);
+            
+            return response()->json([
+                'status' => 'success',
+                'data' => ExamResource::collection($exams),
                 'meta' => [
                     'current_page' => $exams->currentPage(),
                     'last_page' => $exams->lastPage(),
                     'per_page' => $exams->perPage(),
-                    'total' => $exams->total(),
-                ],
-                'filters' => [
-                    'universities' => $universities,
-                    'departments' => $departments,
-                    'years' => $years,
-                    'semesters' => $semesters,
+                    'total' => $exams->total()
                 ]
-            ]
-        ]);
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in publicIndex: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while fetching exams'
+            ], 500);
+        }
     }
 
     /**
@@ -118,7 +105,7 @@ class ExamController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Exam created successfully',
-            'data' => $exam->load('questions')
+            'data' => new ExamResource($exam->load('questions'))
         ], 201);
     }
 
@@ -129,7 +116,7 @@ class ExamController extends Controller
     {
         return response()->json([
             'status' => 'success',
-            'data' => $exam->load('questions')
+            'data' => new ExamResource($exam->load(['questions', 'user']))
         ]);
     }
 
@@ -172,7 +159,7 @@ class ExamController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Exam updated successfully',
-            'data' => $exam->load('questions')
+            'data' => new ExamResource($exam->load(['questions', 'user']))
         ]);
     }
 

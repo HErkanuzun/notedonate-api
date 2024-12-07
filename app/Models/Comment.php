@@ -31,4 +31,12 @@ class Comment extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Get the media for the comment.
+     */
+    public function media()
+    {
+        return $this->morphMany(Media::class, 'mediaable');
+    }
 }

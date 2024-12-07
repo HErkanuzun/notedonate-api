@@ -38,7 +38,7 @@ class EventController extends Controller
         $events = $query->get();
 
         return response()->json([
-            //'status' => 'upcoming',
+            'status' => 'success',
             'data' => $events
         ]);
     }
@@ -140,7 +140,7 @@ class EventController extends Controller
      */
     public function publicIndex()
     {
-        $events = Event::where('status', 'public')->get();
+        $events = Event::where('status', 'upcoming')->get();
         return response()->json([
             'status' => 'success',
             'data' => $events

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasStorage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -10,7 +11,7 @@ use Illuminate\Support\Str;
 class Article extends Model
 {
     /** @use HasFactory<\Database\Factories\ArticleFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasStorage;
 
     protected $fillable = [
         'title',
@@ -72,6 +73,14 @@ class Article extends Model
     public function comments()
     {
         return $this->morphMany(Comment::class, 'commentable');
+    }
+
+    /**
+     * Get all media for the article.
+     */
+    public function media()
+    {
+        return $this->morphMany(Media::class, 'mediaable');
     }
 
     /**

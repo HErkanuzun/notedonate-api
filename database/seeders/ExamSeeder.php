@@ -2,7 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Exam;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class ExamSeeder extends Seeder
@@ -12,6 +13,17 @@ class ExamSeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        // Create a test user if none exists
+        $user = User::first() ?? User::factory()->create([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'university' => 'Test University',
+            'department' => 'Computer Science'
+        ]);
+
+        // Create 10 exams
+        Exam::factory()->count(10)->create([
+            'user_id' => $user->id,
+        ]);
     }
 }
