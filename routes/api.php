@@ -10,6 +10,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamQuestionController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 /*
@@ -27,7 +28,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-
+// User Profile Routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user/profile', [UserController::class, 'profile']);
+    Route::post('/user/profile', [UserController::class, 'updateProfile']);
+    Route::post('/user/verify-phone', [UserController::class, 'verifyPhone']);
+    Route::post('/user/resend-phone-verification', [UserController::class, 'resendPhoneVerification']);
+});
 
 Route::prefix('v1')->group(function () {
     // API HEALT CHECH
@@ -129,6 +136,17 @@ Route::prefix('v1')->group(function () {
             Route::put('/{question}', [ExamQuestionController::class, 'update']);
             Route::delete('/{question}', [ExamQuestionController::class, 'destroy']);
         });
+    });
+
+    // User routes
+    Route::prefix('users')->group(function () {
+        Route::get('{id}/profile', [UserController::class, 'getProfile']);
+        Route::put('{id}/profile', [UserController::class, 'updateProfile'])->middleware('auth:sanctum');
+        Route::get('{id}/stats', [UserController::class, 'getStats']);
+        Route::post('{id}/follow', [UserController::class, 'follow'])->middleware('auth:sanctum');
+        Route::delete('{id}/follow', [UserController::class, 'unfollow'])->middleware('auth:sanctum');
+        Route::get('{id}/followers', [UserController::class, 'getFollowers']);
+        Route::get('{id}/following', [UserController::class, 'getFollowing']);
     });
 
     // Email Verification Routes
