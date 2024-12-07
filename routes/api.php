@@ -38,15 +38,19 @@ Route::prefix('v1')->group(function () {
     Route::prefix('public')->group(function () {
         // Public Articles
         Route::get('articles', [ArticleController::class, 'publicIndex']);
+        Route::get('articles/{id}', [ArticleController::class, 'publicShow']);
     
         // Public Notes
         Route::get('/notes', [NoteController::class, 'publicIndex']);
+        Route::get('/notes/{id}', [NoteController::class, 'publicShow']);
     
         // Public Events
         Route::get('/events', [EventController::class, 'publicIndex']);
+        Route::get('/events/{id}', [EventController::class, 'publicShow']);
         
         // Public Exams
         Route::get('/exams', [ExamController::class, 'publicIndex']);
+        Route::get('/exams/{id}', [ExamController::class, 'publicShow']);
     });
 
     // Auth Routes

@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\Storage;
 
 class ArticleController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum')->except(['publicIndex', 'publicShow']);
+    }
+
     /**
      * Display a listing of articles.
      */
@@ -195,6 +200,19 @@ class ArticleController extends Controller
         return response()->json([
             'status' => 'success',
             'data' => $articles
+        ]);
+    }
+
+    /**
+     * Display the specified article for public view
+     */
+    public function publicShow(string $id)
+    {
+        $article = Article::with(['author', 'categories'])->findOrFail($id);
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $article
         ]);
     }
 }

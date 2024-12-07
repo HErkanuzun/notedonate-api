@@ -8,6 +8,11 @@ use Carbon\Carbon;
 
 class EventController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum')->except(['publicIndex', 'publicShow']);
+    }
+
     /**
      * Display a listing of events.
      */
@@ -138,12 +143,37 @@ class EventController extends Controller
     /**
      * Display a listing of public events.
      */
-    public function publicIndex()
+    public function publicIndex(Request $request)
     {
-        $events = Event::where('status', 'upcoming')->get();
+        $query = Event::query();
+
+        // Tarih sıralaması
+        $query->orderBy('date', 'asc');
+        
+        // Sadece gelecek etkinlikleri getir
+        $query->where('date', '>=', now());
+
+        // Limit
+        $events = $query->take(6)->get();
+
         return response()->json([
             'status' => 'success',
-            'data' => $events
+            'data' => [
+                'events' => $events
+            ]
+        ]);
+    }
+
+    /**
+     * Display the specified event for public view
+     */
+    public function publicShow(string $id)
+    {
+        $event = Event::with(['creator'])->findOrFail($id);
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $event
         ]);
     }
 }

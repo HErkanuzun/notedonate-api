@@ -10,6 +10,11 @@ use Illuminate\Http\Request;
 
 class NoteController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum')->except(['publicIndex', 'publicShow']);
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -26,12 +31,34 @@ class NoteController extends Controller
     /**
      * Display a listing of public notes.
      */
-    public function publicIndex()
+    public function publicIndex(Request $request)
     {
-        $notes = Note::where('status', 'public')->get();
+        $query = Note::query();
+
+        // İndirme sayısına göre sırala
+        $query->orderBy('downloads', 'desc');
+
+        // Limit
+        $notes = $query->take(6)->get();
+
         return response()->json([
             'status' => 'success',
-            'data' => $notes
+            'data' => [
+                'notes' => $notes
+            ]
+        ]);
+    }
+
+    /**
+     * Display the specified note for public view
+     */
+    public function publicShow(string $id)
+    {
+        $note = Note::with(['user'])->findOrFail($id);
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => new NoteResource($note)
         ]);
     }
 

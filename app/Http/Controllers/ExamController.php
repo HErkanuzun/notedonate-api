@@ -12,7 +12,7 @@ class ExamController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:sanctum')->except(['publicIndex']);
+        $this->middleware('auth:sanctum')->except(['publicIndex', 'publicShow']);
     }
 
     /**
@@ -39,36 +39,20 @@ class ExamController extends Controller
      */
     public function publicIndex(Request $request)
     {
-        try {
-            $query = Exam::with(['questions', 'user'])->latest();
+        $query = Exam::query();
 
-            if ($request->has('search')) {
-                $searchTerm = $request->input('search');
-                $query->where(function ($q) use ($searchTerm) {
-                    $q->where('title', 'like', "%{$searchTerm}%")
-                      ->orWhere('subject', 'like', "%{$searchTerm}%");
-                });
-            }
+        // Beğeni sayısına göre sırala
+        $query->orderBy('likes', 'desc');
 
-            $exams = $query->paginate(12);
-            
-            return response()->json([
-                'status' => 'success',
-                'data' => ExamResource::collection($exams),
-                'meta' => [
-                    'current_page' => $exams->currentPage(),
-                    'last_page' => $exams->lastPage(),
-                    'per_page' => $exams->perPage(),
-                    'total' => $exams->total()
-                ]
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Error in publicIndex: ' . $e->getMessage());
-            return response()->json([
-                'status' => 'error',
-                'message' => 'An error occurred while fetching exams'
-            ], 500);
-        }
+        // Limit
+        $exams = $query->take(6)->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'exams' => $exams
+            ]
+        ]);
     }
 
     /**
@@ -117,6 +101,19 @@ class ExamController extends Controller
         return response()->json([
             'status' => 'success',
             'data' => new ExamResource($exam->load(['questions', 'user']))
+        ]);
+    }
+
+    /**
+     * Display the specified exam for public view.
+     */
+    public function publicShow(string $id)
+    {
+        $exam = Exam::with(['questions', 'user'])->findOrFail($id);
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => new ExamResource($exam)
         ]);
     }
 
